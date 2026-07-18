@@ -1,0 +1,280 @@
+// CariKOL — Prisma Schema
+// Bounded contexts: Campaign, Creator, Brand, Auth
+// Decision records are append-only — no UPDATE permitted via service layer
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────
+// Bounded Context: Auth
+// ─────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  campaignsCreated Campaign[]      @relation("CampaignCreatedBy")
+  decisionsRecorded Decision[]     @relation("DecisionRecordedBy")
+  outcomesCompleted OutcomeReview[] @relation("OutcomeCompletedBy")
+  brandsManaged    Brand[]         @relation("BrandAccountManager")
+  auditLogs        AuditLog[]
+
+  @@map("user")
+}
+
+enum UserRole {
+  campaign_manager
+  kol_specialist
+  admin
+
+  @@map("user_role")
+}
+
+// ─────────────────────────────────────────────
+// Bounded Context: Brand
+// ─────────────────────────────────────────────
+
+model Brand {
+  id               String    @id @default(uuid())
+  name             String
+  industry         String?
+  accountManagerId String?   @map("account_manager_id")
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  accountManager   User?     @relation("BrandAccountManager", fields: [accountManagerId], references: [id])
+  campaigns        Campaign[]
+
+  @@map("brand")
+}
+
+// ─────────────────────────────────────────────
+// Bounded Context: Creator
+// ─────────────────────────────────────────────
+
+model Creator {
+  id               String          @id @default(uuid())
+  name             String
+  username         String
+  platform         Platform
+  niche            String
+  tier             CreatorTier
+  followerCount    Int             @map("follower_count")
+  engagementRate   Decimal         @map("engagement_rate") @db.Decimal(5, 2)
+  typicalRateMin   Int?            @map("typical_rate_min")
+  typicalRateMax   Int?            @map("typical_rate_max")
+  contact          String
+  isActive         Boolean         @default(true) @map("is_active")
+  notes            String?
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  decisions        Decision[]
+  outcomeReviews   OutcomeReview[]
+
+  @@index([platform, niche, tier])
+  @@index([isActive])
+  @@map("creator")
+}
+
+enum Platform {
+  tiktok
+  instagram
+  youtube
+  other
+
+  @@map("platform")
+}
+
+enum CreatorTier {
+  nano
+  micro
+  macro
+  mega
+
+  @@map("creator_tier")
+}
+
+// ─────────────────────────────────────────────
+// Bounded Context: Campaign
+// ─────────────────────────────────────────────
+
+model Campaign {
+  id          String         @id @default(uuid())
+  name        String
+  brandId     String         @map("brand_id")
+  status      CampaignStatus @default(draft)
+  createdById String         @map("created_by")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  closedAt    DateTime?      @map("closed_at")
+
+  brand       Brand          @relation(fields: [brandId], references: [id])
+  createdBy   User           @relation("CampaignCreatedBy", fields: [createdById], references: [id])
+  brief       Brief?
+  decisions   Decision[]
+  outcomes    OutcomeReview[]
+
+  @@map("campaign")
+}
+
+enum CampaignStatus {
+  draft
+  active
+  pending_close
+  closed
+
+  @@map("campaign_status")
+}
+
+model Brief {
+  id                  String    @id @default(uuid())
+  campaignId          String    @unique @map("campaign_id")
+  platform            Platform
+  objective           String
+  creatorCriteria     String    @map("creator_criteria")
+  budgetMin           Int       @map("budget_min")
+  budgetMax           Int       @map("budget_max")
+  deliverables        String
+  startDate           DateTime  @map("start_date") @db.Date
+  contentDeadline     DateTime  @map("content_deadline") @db.Date
+  postingDate         DateTime  @map("posting_date") @db.Date
+  specialRequirements String?   @map("special_requirements")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  campaign            Campaign  @relation(fields: [campaignId], references: [id])
+
+  @@map("brief")
+}
+
+// append-only — no UPDATE via service layer
+model Decision {
+  id            String         @id @default(uuid())
+  campaignId    String         @map("campaign_id")
+  creatorId     String         @map("creator_id")
+  type          DecisionType
+  owner         DecisionOwner
+  confidence    Confidence
+  confirmedRate Int?           @map("confirmed_rate")
+  notes         String?
+  recordedById  String         @map("recorded_by")
+  decidedAt     DateTime       @map("decided_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  supersedesId  String?        @unique @map("supersedes_id")
+
+  campaign      Campaign       @relation(fields: [campaignId], references: [id])
+  creator       Creator        @relation(fields: [creatorId], references: [id])
+  recordedBy    User           @relation("DecisionRecordedBy", fields: [recordedById], references: [id])
+  supersedes    Decision?      @relation("DecisionSupersedes", fields: [supersedesId], references: [id])
+  supersededBy  Decision?      @relation("DecisionSupersedes")
+  reason        DecisionReason?
+
+  @@index([campaignId, creatorId])
+  @@index([creatorId, type])
+  @@index([campaignId, type])
+  @@map("decision")
+}
+
+enum DecisionType {
+  creator_proposed
+  internal_approved
+  internal_rejected
+  client_approved
+  client_rejected
+  creator_confirmed
+  creator_declined
+  creator_no_response
+  creator_budget_rejected
+  creator_unavailable
+
+  @@map("decision_type")
+}
+
+enum DecisionOwner {
+  campaign_manager
+  client
+  creator
+  system
+
+  @@map("decision_owner")
+}
+
+enum Confidence {
+  explicit
+  inferred
+
+  @@map("confidence")
+}
+
+model DecisionReason {
+  id         String   @id @default(uuid())
+  decisionId String   @unique @map("decision_id")
+  category   String
+  freeText   String?  @map("free_text")
+
+  decision   Decision @relation(fields: [decisionId], references: [id])
+
+  @@map("decision_reason")
+}
+
+model OutcomeReview {
+  id             String          @id @default(uuid())
+  campaignId     String          @map("campaign_id")
+  creatorId      String          @map("creator_id")
+  contentQuality Int             @map("content_quality") @db.SmallInt
+  communication  Int             @db.SmallInt
+  professionalism Int            @db.SmallInt
+  wouldWorkAgain WouldWorkAgain  @map("would_work_again")
+  notes          String?
+  completedById  String          @map("completed_by")
+  completedAt    DateTime        @map("completed_at")
+
+  campaign       Campaign        @relation(fields: [campaignId], references: [id])
+  creator        Creator         @relation(fields: [creatorId], references: [id])
+  completedBy    User            @relation("OutcomeCompletedBy", fields: [completedById], references: [id])
+
+  @@unique([campaignId, creatorId])
+  @@index([creatorId])
+  @@map("outcome_review")
+}
+
+enum WouldWorkAgain {
+  yes
+  no
+  conditional
+
+  @@map("would_work_again")
+}
+
+// ─────────────────────────────────────────────
+// Infrastructure: Audit Log (no UI in MVP)
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  event      String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id")
+  payload    Json?
+  userId     String?  @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
