@@ -3,6 +3,7 @@ import Link from "next/link"
 import { getSession } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
 import { PortalNav } from "@/components/portal/PortalNav"
+import { DisconnectTikTok } from "@/components/portal/DisconnectTikTok"
 import { Sparkles, ChevronRight, Globe, User } from "lucide-react"
 
 function formatFollower(n: number) {
@@ -97,7 +98,7 @@ export default async function PortalPage({
                 {(tiktokAccount.followerCount / 1000).toFixed(1)}K followers · terakhir sync {tiktokAccount.lastSyncAt ? new Date(tiktokAccount.lastSyncAt).toLocaleDateString("id-ID") : "-"}
               </p>
             </div>
-            <span className="shrink-0 rounded-full bg-green-50 px-2.5 py-0.5 text-[10px] font-semibold text-green-600">Connected</span>
+            <DisconnectTikTok creatorId={session.user.creatorId!} />
           </div>
         )}
 

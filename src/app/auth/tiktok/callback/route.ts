@@ -10,7 +10,7 @@ const PROFILE_FIELDS = "open_id,union_id,avatar_url,display_name,username,bio_de
 const VIDEO_FIELDS   = "id,title,cover_image_url,duration,share_url,like_count,comment_count,share_count,view_count,create_time"
 
 function syntheticCredentials(openId: string) {
-  const email    = `tiktok.${openId}@carikol.id`
+  const email    = `tiktok.${openId}@carikol.id`.toLowerCase()
   const password = createHash("sha256")
     .update(openId + process.env.TIKTOK_CLIENT_SECRET!)
     .digest("hex")

@@ -82,9 +82,10 @@ export function PortalNav({ creator }: Props) {
           </div>
           <button
             onClick={handleSignOut}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
           >
             <LogOut size={14} />
+            <span className="hidden sm:inline">Keluar</span>
           </button>
         </div>
       </div>
