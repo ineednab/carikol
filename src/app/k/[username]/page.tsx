@@ -24,7 +24,13 @@ export default async function MediaKitPage({ params }: Props) {
   if (!creator) notFound()
 
   const studioData = creator.aiInsight
-    ? (() => { try { return JSON.parse(creator.aiInsight!) as AIStudioResult } catch { return null } })()
+    ? (() => {
+        try {
+          const parsed = JSON.parse(creator.aiInsight!) as AIStudioResult
+          if (!parsed?.facts?.activity || !parsed?.ai?.observations) return null
+          return parsed
+        } catch { return null }
+      })()
     : null
 
   return (

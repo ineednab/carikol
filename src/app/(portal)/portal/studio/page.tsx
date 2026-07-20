@@ -18,7 +18,13 @@ export default async function StudioPage() {
   if (!creator) redirect("/portal/onboarding")
 
   const cached = creator.aiInsight
-    ? (() => { try { return JSON.parse(creator.aiInsight!) as AIStudioResult } catch { return null } })()
+    ? (() => {
+        try {
+          const parsed = JSON.parse(creator.aiInsight!) as AIStudioResult
+          if (!parsed?.facts?.activity || !parsed?.ai?.observations) return null
+          return parsed
+        } catch { return null }
+      })()
     : null
 
   return (
