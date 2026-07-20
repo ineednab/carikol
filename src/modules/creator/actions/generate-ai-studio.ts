@@ -1,33 +1,142 @@
 "use server"
-import { generateJSON } from "@/lib/ai/client"
-import { getSession } from "@/lib/session"
-import { prisma } from "@/lib/prisma"
+import { generateJSON }      from "@/lib/ai/client"
+import { getSession }        from "@/lib/session"
+import { prisma }            from "@/lib/prisma"
+import {
+  processCreatorFacts,
+  type CreatorFacts,
+  type TikTokVideo,
+} from "@/lib/creator-facts"
 
-export type BrandFitItem = {
-  category: string
-  score: number // 1-5
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export type AIObservation = {
+  text:     string   // what AI says
+  evidence: string   // which computed fact supports this
 }
 
-export type RateCardItem = {
-  type: string
-  description: string
-  price: number
-  priceFormatted: string
-  reasons: string[]
+export type AIStrength = {
+  label:    string   // e.g. "Consistent Posting"
+  evidence: string   // e.g. "28 uploads in 90 days"
+}
+
+export type AIOpportunity = {
+  label: string      // e.g. "Rate Card Missing"
+}
+
+type AIGenerated = {
+  activitySummary:    string
+  contentSummary:     string
+  performanceSummary: string
+  rateCardExplanation: string
+  observations:       AIObservation[]
+  strengths:          AIStrength[]
+  opportunities:      AIOpportunity[]
 }
 
 export type AIStudioResult = {
-  summary: string
-  audienceInsight: string
-  brandFit: BrandFitItem[]
-  strengths: string[]
-  weaknesses: string[]
-  tips: string[]
-  rateCard: {
-    items: RateCardItem[]
-    positioning: string
+  facts:       CreatorFacts
+  ai:          AIGenerated
+  generatedAt: string
+}
+
+// ── Prompt ────────────────────────────────────────────────────────────────────
+
+function buildPrompt(facts: CreatorFacts): string {
+  // Only send what AI needs — not the full object
+  const context = {
+    profile:     facts.profile,
+    activity:    { ...facts.activity,    evidence: facts.activity.evidence },
+    performance: { ...facts.performance, evidence: facts.performance.evidence },
+    content:     { ...facts.content,     evidence: facts.content.evidence },
+    brandFit:    facts.brandFit,
+    rateCard:    facts.rateCard,
+    facts:       facts.facts,
+    dataQuality: facts.dataQuality,
+  }
+
+  return `You are an analytics writer for CariKOL, a creator platform.
+
+Your ONLY job is to write clear, human-readable explanations of the pre-computed data below.
+
+STRICT RULES:
+1. Do NOT invent facts. Every claim must come from the data provided.
+2. Do NOT mention audience demographics (gender, age, location) — this data is not available from TikTok Login Kit.
+3. Do NOT guess brand preferences beyond what content categories explicitly show.
+4. Do NOT use hedge words ("likely", "probably", "suggests") for values that are already computed.
+5. If a value is null or 0, skip it — do not fill in the gap with assumptions.
+6. Each observation MUST cite one item from the facts array verbatim.
+7. Strengths must have direct numerical evidence. No personality assessments.
+8. Opportunities are gaps in data or profile completeness — not advice.
+9. Write in English. Be concise.
+
+DATA (pre-computed, do not modify):
+${JSON.stringify(context, null, 2)}
+
+Return valid JSON only. No markdown, no explanation outside the JSON.
+
+{
+  "activitySummary": "One sentence about posting habit. Must cite posting frequency or videos90d.",
+  "contentSummary": "One sentence about content focus. Must cite top category and percentage. If no categories found, say 'Content categories could not be determined from available video titles.'",
+  "performanceSummary": "One sentence about views or engagement. Must cite avgViews or avgEngagement.",
+  "rateCardExplanation": "One sentence explaining why the price range is basePriceMin–basePriceMax. Cite tier and avgViews.",
+  "observations": [
+    {
+      "text": "Observation sentence — explain one pattern from the data.",
+      "evidence": "Exact string from facts[] array that supports this."
+    }
+  ],
+  "strengths": [
+    {
+      "label": "Short label (2-4 words)",
+      "evidence": "Specific number or metric from the data"
+    }
+  ],
+  "opportunities": [
+    {
+      "label": "Short label describing a missing or incomplete data point"
+    }
+  ]
+}
+
+Maximum: 3 observations, 3 strengths, 3 opportunities.
+If dataQuality.insufficient is true, limit observations to 1 and note limited data.`
+}
+
+// ── Validator ─────────────────────────────────────────────────────────────────
+
+function validateAIOutput(ai: AIGenerated, facts: CreatorFacts): AIGenerated {
+  const factSet = new Set(facts.facts)
+
+  const validatedObservations = (ai.observations ?? [])
+    .filter((o) => {
+      // Reject any observation that references audience demographics
+      const banned = ["female", "male", "gender", "age", "location", "demografi", "perempuan", "laki"]
+      return !banned.some((b) => o.text.toLowerCase().includes(b))
+    })
+    .slice(0, 3)
+
+  const validatedStrengths = (ai.strengths ?? [])
+    .filter((s) => s.label && s.evidence)
+    .slice(0, 3)
+
+  const validatedOpportunities = (ai.opportunities ?? [])
+    .filter((o) => o.label)
+    .slice(0, 3)
+
+  // Add missing fact check — if observation evidence not in facts, keep it but don't reject
+  // (AI may paraphrase rather than quote verbatim)
+  void factSet
+
+  return {
+    ...ai,
+    observations:   validatedObservations,
+    strengths:      validatedStrengths,
+    opportunities:  validatedOpportunities,
   }
 }
+
+// ── Action ────────────────────────────────────────────────────────────────────
 
 export async function generateAIStudioAction(): Promise<
   { success: true; data: AIStudioResult } | { success: false; error: string }
@@ -35,93 +144,57 @@ export async function generateAIStudioAction(): Promise<
   const session = await getSession()
   if (!session?.user.creatorId) return { success: false, error: "Profil creator tidak ditemukan." }
 
-  const creator = await prisma.creator.findUnique({
-    where: { id: session.user.creatorId },
-  })
+  const [creator, tiktokAccount] = await Promise.all([
+    prisma.creator.findUnique({ where: { id: session.user.creatorId } }),
+    prisma.tikTokAccount.findUnique({ where: { creatorId: session.user.creatorId } }),
+  ])
   if (!creator) return { success: false, error: "Creator tidak ditemukan." }
 
-  // Sanitize user-controlled strings — strip newlines and cap length to prevent prompt injection
-  const safe = (s: string, max = 100) =>
-    s.replace(/[\n\r]/g, " ").replace(/[`"]/g, "'").slice(0, max)
+  const rawVideos = (tiktokAccount?.videosJson ?? []) as TikTokVideo[]
 
-  const prompt = `Kamu adalah AI analyst untuk platform creator Indonesia. Analisa creator berikut dan buat Creator Intelligence Report lengkap.
+  const facts = processCreatorFacts(
+    rawVideos,
+    {
+      followerCount:  tiktokAccount?.followerCount  ?? creator.followerCount,
+      followingCount: tiktokAccount?.followingCount ?? 0,
+      likesCount:     tiktokAccount?.likesCount     ?? 0,
+      videoCount:     tiktokAccount?.videoCount     ?? 0,
+    },
+    {
+      tier:           creator.tier,
+      platform:       creator.platform,
+      engagementRate: Number(creator.engagementRate),
+    }
+  )
 
-Data Creator:
-- Nama: ${safe(creator.name)}
-- Platform: ${safe(creator.platform)}
-- Username: @${safe(creator.username)}
-- Niche: ${safe(creator.niche, 200)}
-- Kota: ${creator.city ? safe(creator.city) : "tidak disebutkan"}
-- Follower: ${creator.followerCount.toLocaleString("id")}
-- Tier: ${safe(creator.tier)}
-- Engagement Rate: ${creator.engagementRate}%
-
-Return JSON ONLY (no other text):
-{
-  "summary": "Paragraf 2-3 kalimat yang mendeskripsikan creator secara profesional. Sebutkan nama, platform, audience, dan value proposition untuk brand.",
-
-  "audienceInsight": "1-2 kalimat deskripsi audience (demografi, minat utama, perilaku konsumsi konten)",
-
-  "brandFit": [
-    { "category": "Beauty & Skincare", "score": 5 },
-    { "category": "Fashion & Style", "score": 4 },
-    { "category": "Lifestyle", "score": 4 },
-    { "category": "Food & Kuliner", "score": 3 },
-    { "category": "Health & Wellness", "score": 3 }
-  ],
-
-  "strengths": [
-    "kekuatan spesifik 1",
-    "kekuatan spesifik 2",
-    "kekuatan spesifik 3"
-  ],
-
-  "weaknesses": [
-    "area yang perlu ditingkatkan 1",
-    "area yang perlu ditingkatkan 2"
-  ],
-
-  "tips": [
-    "tips konkret untuk meningkatkan value sebagai creator 1",
-    "tips konkret 2"
-  ],
-
-  "rateCard": {
-    "positioning": "1 frase positioning creator (contoh: 'Beauty Micro-Influencer TikTok')",
-    "items": [
-      {
-        "type": "jenis konten sesuai platform ${creator.platform}",
-        "description": "apa yang didapat brand",
-        "price": angka_rupiah,
-        "priceFormatted": "Rp X.XXX.XXX",
-        "reasons": ["alasan singkat kenapa harga ini", "alasan 2"]
-      }
-    ]
-  }
-}
-
-Untuk brandFit, sesuaikan dengan niche creator. Score 1-5.
-Untuk rateCard, buat 4-5 item sesuai platform ${creator.platform} (TikTok: Video TikTok/Live/Duet, Instagram: Feed/Reels/Story, YouTube: Dedicated/Integration/Shorts).
-Harga harus realistis untuk pasar Indonesia berdasarkan tier ${creator.tier} dan ${creator.followerCount.toLocaleString("id")} followers.`
+  const prompt = buildPrompt(facts)
 
   try {
-    const data = await generateJSON<AIStudioResult>(prompt, 2048)
-    if (!data) return { success: false, error: "Gagal memproses respons AI." }
+    const aiRaw = await generateJSON<AIGenerated>(prompt, 1024)
+    if (!aiRaw) return { success: false, error: "Gagal memproses respons AI." }
 
-    // Cache everything
-    const prices = (data.rateCard?.items ?? []).map((i) => i.price).filter((p) => typeof p === "number" && isFinite(p))
+    const ai = validateAIOutput(aiRaw, facts)
+
+    const result: AIStudioResult = {
+      facts,
+      ai,
+      generatedAt: new Date().toISOString(),
+    }
+
+    // Derive rate card price range from rule engine (not AI)
+    const prices = [facts.rateCard.basePriceMin, facts.rateCard.basePriceMax].filter(Boolean)
     await prisma.creator.update({
       where: { id: creator.id },
       data: {
-        aiInsight:      JSON.stringify(data),
-        rateCardJson:   data.rateCard as object,
-        typicalRateMin: prices.length > 0 ? Math.min(...prices) : null,
-        typicalRateMax: prices.length > 0 ? Math.max(...prices) : null,
+        aiInsight:      JSON.stringify(result),
+        typicalRateMin: prices[0] ?? null,
+        typicalRateMax: prices[1] ?? null,
       },
     })
 
-    return { success: true, data }
-  } catch {
-    return { success: false, error: "Gagal generate AI Studio. Coba lagi." }
+    return { success: true, data: result }
+  } catch (err) {
+    console.error("[AI Studio]", err)
+    return { success: false, error: "Gagal generate. Coba lagi." }
   }
 }

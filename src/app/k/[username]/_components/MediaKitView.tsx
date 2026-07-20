@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { Check, Copy, MapPin, Users, TrendingUp, Sparkles, MessageCircle, Star } from "lucide-react"
+import { Check, Copy, MapPin, Users, TrendingUp, Sparkles, MessageCircle } from "lucide-react"
 import { CariKOLLogo } from "@/components/shared/CariKOLLogo"
 import type { AIStudioResult } from "@/modules/creator/actions/generate-ai-studio"
 
@@ -26,14 +26,10 @@ function formatFollower(n: number) {
   return n.toString()
 }
 
-function StarRating({ score }: { score: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star key={i} size={11} className={i < score ? "fill-amber-400 text-amber-400" : "fill-zinc-200 text-zinc-200"} />
-      ))}
-    </div>
-  )
+function fmt(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K`
+  return n.toString()
 }
 
 interface Props {
@@ -101,8 +97,8 @@ export function MediaKitView({ creator, studioData }: Props) {
                   <MapPin size={12} /> {creator.city}
                 </p>
               )}
-              {studioData?.summary ? (
-                <p className="mt-3 text-sm leading-relaxed text-zinc-600">{studioData.summary}</p>
+              {studioData?.ai?.activitySummary ? (
+                <p className="mt-3 text-sm leading-relaxed text-zinc-600">{studioData.ai.activitySummary}</p>
               ) : creator.bio ? (
                 <p className="mt-3 text-sm leading-relaxed text-zinc-600">{creator.bio}</p>
               ) : null}
@@ -134,55 +130,72 @@ export function MediaKitView({ creator, studioData }: Props) {
 
         {studioData ? (
           <>
-            {/* AI Insight (dark) */}
-            <div className="rounded-2xl bg-[#1B1B2E] p-6 text-white">
-              <div className="mb-3 flex items-center gap-2">
-                <Sparkles size={13} className="text-violet-400" />
-                <span className="text-xs font-semibold uppercase tracking-widest text-violet-400">AI Insight</span>
-              </div>
-              <p className="text-sm leading-relaxed text-zinc-300">{studioData.audienceInsight}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {studioData.strengths.map((s, i) => (
-                  <span key={i} className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs text-zinc-300">
-                    <span className="text-green-400">✓</span> {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Brand Fit */}
-            <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-400">AI Brand Fit</p>
-              <div className="space-y-3">
-                {studioData.brandFit.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-zinc-700">{item.category}</span>
-                    <StarRating score={item.score} />
+            {/* AI Observations */}
+            {studioData.ai.observations.length > 0 && (
+              <div className="rounded-2xl bg-[#1B1B2E] p-6 text-white">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles size={13} className="text-violet-400" />
+                  <span className="text-xs font-semibold uppercase tracking-widest text-violet-400">AI Observations</span>
+                </div>
+                <div className="space-y-3">
+                  {studioData.ai.observations.map((obs, i) => (
+                    <div key={i} className="rounded-xl bg-white/5 p-3">
+                      <p className="text-sm text-zinc-200">{obs.text}</p>
+                      <p className="mt-1 text-[10px] text-zinc-500">Evidence: {obs.evidence}</p>
+                    </div>
+                  ))}
+                </div>
+                {studioData.ai.strengths.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {studioData.ai.strengths.map((s, i) => (
+                      <span key={i} className="flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs text-zinc-300">
+                        <span className="text-green-400">✓</span> {s.label}
+                      </span>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            </div>
+            )}
+
+            {/* Brand Fit (deterministic) */}
+            {studioData.facts.brandFit.length > 0 && (
+              <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-zinc-400">Brand Fit</p>
+                <div className="space-y-3">
+                  {studioData.facts.brandFit.map((item, i) => (
+                    <div key={i}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm text-zinc-700">{item.category}</span>
+                        <span className="text-xs font-bold text-zinc-500">{item.score}</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-zinc-100 overflow-hidden">
+                        <div className="h-full rounded-full bg-emerald-400" style={{ width: `${item.score}%` }} />
+                      </div>
+                      <p className="mt-0.5 text-[10px] text-zinc-400">{item.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Rate Card */}
             <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-zinc-400">Rate Card</p>
-              <p className="mb-4 text-xs font-medium text-violet-600">{studioData.rateCard.positioning}</p>
-              <div className="space-y-3">
-                {studioData.rateCard.items.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-zinc-900">{item.type}</p>
-                      <p className="mt-0.5 text-xs text-zinc-500">{item.description}</p>
-                    </div>
-                    <p className="shrink-0 font-bold text-zinc-900">{formatIDR(item.price)}</p>
-                  </div>
-                ))}
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">Creator Pricing</p>
+              <div className="mb-3 flex items-baseline gap-2">
+                <span className="text-xl font-bold text-zinc-900">
+                  {formatIDR(studioData.facts.rateCard.basePriceMin)}
+                </span>
+                <span className="text-zinc-400">–</span>
+                <span className="text-xl font-bold text-zinc-900">
+                  {formatIDR(studioData.facts.rateCard.basePriceMax)}
+                </span>
               </div>
-              {creator.typicalRateMin && creator.typicalRateMax && (
-                <p className="mt-3 text-center text-xs text-zinc-400">
-                  Range: {formatIDR(creator.typicalRateMin)} – {formatIDR(creator.typicalRateMax)}
-                </p>
+              {studioData.ai.rateCardExplanation && (
+                <p className="text-xs text-zinc-500">{studioData.ai.rateCardExplanation}</p>
               )}
+              <p className="mt-2 text-[10px] text-zinc-400">
+                Based on {fmt(studioData.facts.performance.avgViews)} avg views × CPV benchmark for {studioData.facts.profile.tier} tier.
+              </p>
             </div>
           </>
         ) : (
