@@ -1,28 +1,51 @@
 "use client"
 import { useState } from "react"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 
-type OAuthBtn = "google" | "tiktok"
-
 export function LoginForm() {
-  const [loading, setLoading] = useState<OAuthBtn | null>(null)
+  const [loading, setLoading] = useState<"google" | "tiktok" | null>(null)
 
-  const handleOAuth = async (provider: OAuthBtn) => {
-    setLoading(provider)
+  const handleGoogle = async () => {
+    setLoading("google")
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      provider: provider as any,
+      provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
     })
   }
 
+  const handleTikTok = () => {
+    setLoading("tiktok")
+    window.location.href = "/auth/tiktok"
+  }
+
   return (
     <div className="space-y-3">
-      {/* Google */}
+
+      {/* TikTok — primary for creators */}
       <button
         type="button"
-        onClick={() => handleOAuth("google")}
+        onClick={handleTikTok}
+        disabled={loading !== null}
+        className="flex w-full items-center justify-center gap-3 rounded-xl bg-zinc-900 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800 active:scale-[0.99] disabled:opacity-50"
+      >
+        <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
+        </svg>
+        {loading === "tiktok" ? "Menghubungkan..." : "Masuk dengan TikTok"}
+      </button>
+
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-zinc-200" />
+        <span className="text-[11px] text-zinc-400">atau</span>
+        <div className="h-px flex-1 bg-zinc-200" />
+      </div>
+
+      {/* Google — for brands & agencies */}
+      <button
+        type="button"
+        onClick={handleGoogle}
         disabled={loading !== null}
         className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200 bg-white py-3 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 active:scale-[0.99] disabled:opacity-50"
       >
@@ -32,30 +55,15 @@ export function LoginForm() {
           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
           <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
         </svg>
-        {loading === "google" ? "Menghubungkan..." : "Lanjutkan dengan Google"}
+        {loading === "google" ? "Menghubungkan..." : "Masuk dengan Google"}
       </button>
 
-      {/* TikTok — coming soon */}
-      <div className="relative">
-        <button
-          type="button"
-          disabled
-          className="flex w-full items-center justify-center gap-3 rounded-xl bg-zinc-900 py-3 text-sm font-medium text-white opacity-40 cursor-not-allowed"
-        >
-          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
-          </svg>
-          Lanjutkan dengan TikTok
-        </button>
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-zinc-700 px-2 py-0.5 text-[10px] font-medium text-zinc-300">
-          Segera
-        </span>
-      </div>
-
-      <p className="pt-1 text-center text-xs text-zinc-400">
+      <p className="pt-1 text-center text-[11px] text-zinc-400">
         Dengan masuk, kamu setuju dengan{" "}
-        <span className="underline underline-offset-2 cursor-pointer">Syarat & Ketentuan</span>{" "}
-        CariKOL.
+        <Link href="/terms" className="underline underline-offset-2 hover:text-zinc-600">Syarat & Ketentuan</Link>
+        {" "}dan{" "}
+        <Link href="/privacy" className="underline underline-offset-2 hover:text-zinc-600">Kebijakan Privasi</Link>
+        {" "}CariKOL.
       </p>
     </div>
   )

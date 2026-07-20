@@ -13,14 +13,20 @@ function formatFollower(n: number) {
 
 export const metadata = { title: "Portal — CariKOL" }
 
-export default async function PortalPage() {
+export default async function PortalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tiktok?: string }>
+}) {
   const session = await getSession()
   if (!session) redirect("/login")
   if (!session.user.creatorId) redirect("/portal/onboarding")
 
-  const creator = await prisma.creator.findUnique({
-    where: { id: session.user.creatorId },
-  })
+  const [creator, tiktokAccount, { tiktok: tiktokStatus }] = await Promise.all([
+    prisma.creator.findUnique({ where: { id: session.user.creatorId } }),
+    prisma.tikTokAccount.findUnique({ where: { creatorId: session.user.creatorId } }),
+    searchParams,
+  ])
   if (!creator) redirect("/portal/onboarding")
 
   const firstName = session.user.name?.split(" ")[0] ?? "Creator"
@@ -49,6 +55,52 @@ export default async function PortalPage() {
       <PortalNav creator={{ name: session.user.name ?? "", username: creator.username, tier: creator.tier }} />
 
       <main className="mx-auto max-w-5xl px-6 py-10">
+
+        {/* TikTok status banners */}
+        {tiktokStatus === "connected" && (
+          <div className="mb-6 flex items-center gap-3 rounded-2xl bg-green-50 border border-green-200 px-5 py-3.5">
+            <span className="text-lg">✓</span>
+            <p className="text-sm font-medium text-green-800">TikTok berhasil terhubung! Data kamu sudah diimport.</p>
+          </div>
+        )}
+        {tiktokStatus === "error" && (
+          <div className="mb-6 flex items-center gap-3 rounded-2xl bg-red-50 border border-red-200 px-5 py-3.5">
+            <span className="text-lg">⚠</span>
+            <p className="text-sm font-medium text-red-800">Gagal menghubungkan TikTok. Coba lagi.</p>
+          </div>
+        )}
+
+        {/* Connect TikTok nudge (only if TikTok platform, not yet connected) */}
+        {creator.platform === "tiktok" && !tiktokAccount && (
+          <Link
+            href="/auth/tiktok"
+            className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-white p-5 transition hover:border-zinc-300 hover:shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white text-lg shrink-0">𝕋</div>
+              <div>
+                <p className="text-sm font-semibold text-zinc-900">Hubungkan TikTok kamu</p>
+                <p className="text-xs text-zinc-400">Auto-import followers, stats & videos ke portfolio</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="shrink-0 text-zinc-300" />
+          </Link>
+        )}
+
+        {/* TikTok connected status card */}
+        {tiktokAccount && (
+          <div className="mb-6 flex items-center gap-4 rounded-2xl border border-zinc-200 bg-white p-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white text-lg shrink-0">𝕋</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-zinc-900">@{tiktokAccount.username ?? tiktokAccount.displayName}</p>
+              <p className="text-xs text-zinc-400 mt-0.5">
+                {(tiktokAccount.followerCount / 1000).toFixed(1)}K followers · terakhir sync {tiktokAccount.lastSyncAt ? new Date(tiktokAccount.lastSyncAt).toLocaleDateString("id-ID") : "-"}
+              </p>
+            </div>
+            <span className="shrink-0 rounded-full bg-green-50 px-2.5 py-0.5 text-[10px] font-semibold text-green-600">Connected</span>
+          </div>
+        )}
+
         {/* Greeting */}
         <div className="mb-10">
           <h1 className="text-2xl font-bold text-zinc-900">Welcome back, {firstName}.</h1>

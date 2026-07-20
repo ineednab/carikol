@@ -91,10 +91,35 @@ model Creator {
   userAccount      User?           @relation("UserCreatorAccount")
   decisions        Decision[]
   outcomeReviews   OutcomeReview[]
+  tiktokAccount    TikTokAccount?
 
   @@index([platform, niche, tier])
   @@index([isActive])
   @@map("creator")
+}
+
+model TikTokAccount {
+  id             String    @id @default(uuid()) @db.Uuid
+  creatorId      String    @unique @map("creator_id") @db.Uuid
+  openId         String    @unique @map("open_id")
+  accessToken    String    @map("access_token")
+  refreshToken   String?   @map("refresh_token")
+  expiresAt      DateTime  @map("expires_at")
+  username       String?
+  displayName    String?   @map("display_name")
+  avatarUrl      String?   @map("avatar_url")
+  bio            String?
+  followerCount  Int       @default(0) @map("follower_count")
+  followingCount Int       @default(0) @map("following_count")
+  likesCount     Int       @default(0) @map("likes_count")
+  videoCount     Int       @default(0) @map("video_count")
+  videosJson     Json?     @map("videos_json")
+  connectedAt    DateTime  @default(now()) @map("connected_at")
+  lastSyncAt     DateTime? @map("last_sync_at")
+
+  creator        Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@map("tiktok_account")
 }
 
 enum Platform {

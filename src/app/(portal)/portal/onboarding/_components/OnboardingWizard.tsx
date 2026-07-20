@@ -109,10 +109,31 @@ export function OnboardingWizard({ prefill }: Props) {
           <div className="mb-6 text-6xl">🎉</div>
           <h2 className="text-2xl font-bold text-zinc-900">Your Creator Identity is ready.</h2>
           <p className="mt-3 text-sm text-zinc-500">You&apos;re now discoverable by brands.</p>
+
+          {platform === "tiktok" && (
+            <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 text-left">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-white text-lg">
+                  𝕋
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900">Connect TikTok</p>
+                  <p className="text-xs text-zinc-400">Auto-import followers, stats & videos</p>
+                </div>
+              </div>
+              <Link
+                href="/auth/tiktok"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-black py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-95"
+              >
+                Connect TikTok Account
+              </Link>
+            </div>
+          )}
+
           <Link
             href={`/k/${creatorUsername}`}
             target="_blank"
-            className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:opacity-90"
+            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:opacity-90"
           >
             <Sparkles size={15} />
             View My Digital Passport
