@@ -1,0 +1,15 @@
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ckGrad" x1="60" y1="40" x2="450" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D28D9"/>
+      <stop offset="0.55" stop-color="#9333EA"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="500" height="500" rx="128" fill="url(#ckGrad)"/>
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="291" y1="291" x2="372" y2="372" stroke-width="46"/>
+    <circle cx="208" cy="208" r="112" stroke-width="38"/>
+  </g>
+  <path d="M208 150 L222 194 L266 208 L222 222 L208 266 L194 222 L150 208 L194 194 Z" fill="#ffffff"/>
+</svg>

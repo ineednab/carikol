@@ -20,16 +20,18 @@ model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
-  password  String
+  password  String?
   role      UserRole
+  creatorId String?  @unique @map("creator_id")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  campaignsCreated Campaign[]      @relation("CampaignCreatedBy")
-  decisionsRecorded Decision[]     @relation("DecisionRecordedBy")
+  creator           Creator?        @relation("UserCreatorAccount", fields: [creatorId], references: [id])
+  campaignsCreated  Campaign[]      @relation("CampaignCreatedBy")
+  decisionsRecorded Decision[]      @relation("DecisionRecordedBy")
   outcomesCompleted OutcomeReview[] @relation("OutcomeCompletedBy")
-  brandsManaged    Brand[]         @relation("BrandAccountManager")
-  auditLogs        AuditLog[]
+  brandsManaged     Brand[]         @relation("BrandAccountManager")
+  auditLogs         AuditLog[]
 
   @@map("user")
 }
@@ -38,6 +40,7 @@ enum UserRole {
   campaign_manager
   kol_specialist
   admin
+  talent
 
   @@map("user_role")
 }
@@ -68,7 +71,8 @@ model Brand {
 model Creator {
   id               String          @id @default(uuid())
   name             String
-  username         String
+  username         String          @unique
+  city             String?
   platform         Platform
   niche            String
   tier             CreatorTier
@@ -79,9 +83,12 @@ model Creator {
   contact          String
   isActive         Boolean         @default(true) @map("is_active")
   notes            String?
+  aiInsight        String?         @map("ai_insight")
+  rateCardJson     Json?           @map("rate_card_json")
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 
+  userAccount      User?           @relation("UserCreatorAccount")
   decisions        Decision[]
   outcomeReviews   OutcomeReview[]
 

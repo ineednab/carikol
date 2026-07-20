@@ -1,15 +1,15 @@
 "use server"
-import { signIn } from "@/lib/auth"
-import { AuthError } from "next-auth"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 
 export async function loginAction(email: string, password: string): Promise<string | null> {
-  try {
-    await signIn("credentials", { email, password, redirectTo: "/" })
-    return null
-  } catch (error) {
-    if (error instanceof AuthError) {
-      return "Email atau password salah."
-    }
-    throw error // re-throw NEXT_REDIRECT so Next.js handles navigation
+  const supabase = await createClient()
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+  if (error) {
+    return "Email atau password salah."
   }
+
+  redirect("/")
 }

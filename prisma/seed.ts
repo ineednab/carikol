@@ -9,31 +9,16 @@ async function main() {
   // ─── Users ────────────────────────────────
   const hashedPassword = await bcrypt.hash("password123", 10);
 
-  const [admin, cm1, cm2, ks1, ks2] = await Promise.all([
+  const [nabila, cao] = await Promise.all([
     prisma.user.upsert({
-      where: { email: "admin@buzzeryok.com" },
+      where: { email: "satepacdang@gmail.com" },
       update: {},
-      create: { name: "Admin Buzzeryok", email: "admin@buzzeryok.com", password: hashedPassword, role: UserRole.admin },
+      create: { name: "Nabila", email: "satepacdang@gmail.com", password: hashedPassword, role: UserRole.admin },
     }),
     prisma.user.upsert({
-      where: { email: "dina@buzzeryok.com" },
+      where: { email: "kerjaancao@gmail.com" },
       update: {},
-      create: { name: "Dina Rahayu", email: "dina@buzzeryok.com", password: hashedPassword, role: UserRole.campaign_manager },
-    }),
-    prisma.user.upsert({
-      where: { email: "reza@buzzeryok.com" },
-      update: {},
-      create: { name: "Reza Firmansyah", email: "reza@buzzeryok.com", password: hashedPassword, role: UserRole.campaign_manager },
-    }),
-    prisma.user.upsert({
-      where: { email: "sari@buzzeryok.com" },
-      update: {},
-      create: { name: "Sari Dewi", email: "sari@buzzeryok.com", password: hashedPassword, role: UserRole.kol_specialist },
-    }),
-    prisma.user.upsert({
-      where: { email: "andi@buzzeryok.com" },
-      update: {},
-      create: { name: "Andi Pratama", email: "andi@buzzeryok.com", password: hashedPassword, role: UserRole.kol_specialist },
+      create: { name: "Cao", email: "kerjaancao@gmail.com", password: hashedPassword, role: UserRole.campaign_manager },
     }),
   ]);
 
@@ -41,11 +26,11 @@ async function main() {
 
   // ─── Brands ───────────────────────────────
   const [wardah, scarlett, , somethinc] = await Promise.all([
-    prisma.brand.create({ data: { name: "Wardah Cosmetics", industry: "Beauty & Skincare", accountManagerId: cm1.id, notes: "Halal beauty brand. Prefer family-friendly content." } }),
-    prisma.brand.create({ data: { name: "Scarlett Whitening", industry: "Beauty & Skincare", accountManagerId: cm1.id, notes: "Body care & skincare. Target: wanita 20-35 tahun." } }),
-    prisma.brand.create({ data: { name: "Emina Cosmetics", industry: "Beauty", accountManagerId: cm2.id, notes: "Youth-oriented brand. Playful, colorful aesthetic." } }),
-    prisma.brand.create({ data: { name: "SOMETHINC", industry: "Skincare", accountManagerId: cm2.id, notes: "Science-based skincare. Prefer educational content." } }),
-    prisma.brand.create({ data: { name: "MS Glow", industry: "Beauty & Wellness", accountManagerId: cm1.id } }),
+    prisma.brand.create({ data: { name: "Wardah Cosmetics", industry: "Beauty & Skincare", accountManagerId: nabila.id, notes: "Halal beauty brand. Prefer family-friendly content." } }),
+    prisma.brand.create({ data: { name: "Scarlett Whitening", industry: "Beauty & Skincare", accountManagerId: nabila.id, notes: "Body care & skincare. Target: wanita 20-35 tahun." } }),
+    prisma.brand.create({ data: { name: "Emina Cosmetics", industry: "Beauty", accountManagerId: cao.id, notes: "Youth-oriented brand. Playful, colorful aesthetic." } }),
+    prisma.brand.create({ data: { name: "SOMETHINC", industry: "Skincare", accountManagerId: cao.id, notes: "Science-based skincare. Prefer educational content." } }),
+    prisma.brand.create({ data: { name: "MS Glow", industry: "Beauty & Wellness", accountManagerId: nabila.id } }),
   ]);
 
   console.log("✅ Brands created");
@@ -81,7 +66,7 @@ async function main() {
 
   // ─── Campaign 1: Wardah — Closed ──────────
   const campaign1 = await prisma.campaign.create({
-    data: { name: "Wardah Lightening Series Q2 2026", brandId: wardah.id, status: CampaignStatus.closed, createdById: cm1.id, closedAt: new Date("2026-06-20") },
+    data: { name: "Wardah Lightening Series Q2 2026", brandId: wardah.id, status: CampaignStatus.closed, createdById: nabila.id, closedAt: new Date("2026-06-20") },
   });
   await prisma.brief.create({
     data: {
@@ -94,7 +79,6 @@ async function main() {
     },
   });
 
-  // Nadia: proposed → internal approved → client approved → confirmed
   for (const [type, owner, extra] of [
     [DecisionType.creator_proposed, DecisionOwner.system, {}],
     [DecisionType.internal_approved, DecisionOwner.campaign_manager, {}],
@@ -102,22 +86,19 @@ async function main() {
     [DecisionType.creator_confirmed, DecisionOwner.creator, { confirmedRate: 2_000_000 }],
   ] as const) {
     await prisma.decision.create({
-      data: { campaignId: campaign1.id, creatorId: nadia.id, type, owner, confidence: Confidence.explicit, recordedById: type === DecisionType.creator_proposed || type === DecisionType.creator_confirmed ? ks1.id : cm1.id, decidedAt: new Date("2026-05-10"), ...extra },
+      data: { campaignId: campaign1.id, creatorId: nadia.id, type, owner, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-10"), ...extra },
     });
   }
 
-  // Reni: proposed → internal approved → client rejected
-  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.creator_proposed, owner: DecisionOwner.system, confidence: Confidence.explicit, recordedById: ks1.id, decidedAt: new Date("2026-05-02") } });
-  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.internal_approved, owner: DecisionOwner.campaign_manager, confidence: Confidence.explicit, recordedById: cm1.id, decidedAt: new Date("2026-05-04") } });
-  const reniClientRejected = await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.client_rejected, owner: DecisionOwner.client, confidence: Confidence.explicit, recordedById: cm1.id, decidedAt: new Date("2026-05-08") } });
+  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.creator_proposed, owner: DecisionOwner.system, confidence: Confidence.explicit, recordedById: cao.id, decidedAt: new Date("2026-05-02") } });
+  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.internal_approved, owner: DecisionOwner.campaign_manager, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-04") } });
+  const reniClientRejected = await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.client_rejected, owner: DecisionOwner.client, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-08") } });
   await prisma.decisionReason.create({ data: { decisionId: reniClientRejected.id, category: "tidak_sesuai_brand_image", freeText: "Klien merasa estetika konten tidak cocok dengan brand Wardah yang natural" } });
 
-  // Karina: proposed → internal rejected (budget)
-  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: karina.id, type: DecisionType.creator_proposed, owner: DecisionOwner.system, confidence: Confidence.explicit, recordedById: ks1.id, decidedAt: new Date("2026-05-02") } });
-  const karinaRejected = await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: karina.id, type: DecisionType.internal_rejected, owner: DecisionOwner.campaign_manager, confidence: Confidence.explicit, recordedById: cm1.id, decidedAt: new Date("2026-05-04") } });
+  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: karina.id, type: DecisionType.creator_proposed, owner: DecisionOwner.system, confidence: Confidence.explicit, recordedById: cao.id, decidedAt: new Date("2026-05-02") } });
+  const karinaRejected = await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: karina.id, type: DecisionType.internal_rejected, owner: DecisionOwner.campaign_manager, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-04") } });
   await prisma.decisionReason.create({ data: { decisionId: karinaRejected.id, category: "budget_tidak_sesuai", freeText: "Rate Karina di atas budget campaign ini" } });
 
-  // Anisa: proposed → confirmed
   for (const [type, owner, extra] of [
     [DecisionType.creator_proposed, DecisionOwner.system, {}],
     [DecisionType.internal_approved, DecisionOwner.campaign_manager, {}],
@@ -125,19 +106,18 @@ async function main() {
     [DecisionType.creator_confirmed, DecisionOwner.creator, { confirmedRate: 2_200_000 }],
   ] as const) {
     await prisma.decision.create({
-      data: { campaignId: campaign1.id, creatorId: anisa.id, type, owner, confidence: Confidence.explicit, recordedById: type === DecisionType.creator_proposed || type === DecisionType.creator_confirmed ? ks1.id : cm1.id, decidedAt: new Date("2026-05-14"), ...extra },
+      data: { campaignId: campaign1.id, creatorId: anisa.id, type, owner, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-14"), ...extra },
     });
   }
 
-  // Outcome reviews for campaign 1
-  await prisma.outcomeReview.create({ data: { campaignId: campaign1.id, creatorId: nadia.id, contentQuality: 5, communication: 4, professionalism: 5, wouldWorkAgain: WouldWorkAgain.yes, notes: "Konten sangat bagus, sesuai brief, posting on time.", completedById: cm1.id, completedAt: new Date("2026-06-18") } });
-  await prisma.outcomeReview.create({ data: { campaignId: campaign1.id, creatorId: anisa.id, contentQuality: 4, communication: 5, professionalism: 4, wouldWorkAgain: WouldWorkAgain.yes, notes: "Komunikasi sangat responsif, konten sesuai guidelines.", completedById: cm1.id, completedAt: new Date("2026-06-18") } });
+  await prisma.outcomeReview.create({ data: { campaignId: campaign1.id, creatorId: nadia.id, contentQuality: 5, communication: 4, professionalism: 5, wouldWorkAgain: WouldWorkAgain.yes, notes: "Konten sangat bagus, sesuai brief, posting on time.", completedById: nabila.id, completedAt: new Date("2026-06-18") } });
+  await prisma.outcomeReview.create({ data: { campaignId: campaign1.id, creatorId: anisa.id, contentQuality: 4, communication: 5, professionalism: 4, wouldWorkAgain: WouldWorkAgain.yes, notes: "Komunikasi sangat responsif, konten sesuai guidelines.", completedById: nabila.id, completedAt: new Date("2026-06-18") } });
 
   console.log("✅ Campaign 1 (Wardah — Closed) created");
 
   // ─── Campaign 2: Scarlett — Active ────────
   const campaign2 = await prisma.campaign.create({
-    data: { name: "Scarlett Body Lotion Ramadan Edition", brandId: scarlett.id, status: CampaignStatus.active, createdById: cm1.id },
+    data: { name: "Scarlett Body Lotion Ramadan Edition", brandId: scarlett.id, status: CampaignStatus.active, createdById: nabila.id },
   });
   await prisma.brief.create({
     data: {
@@ -150,7 +130,6 @@ async function main() {
     },
   });
 
-  // Aurel: proposed → confirmed
   for (const [type, owner, extra] of [
     [DecisionType.creator_proposed, DecisionOwner.system, {}],
     [DecisionType.internal_approved, DecisionOwner.campaign_manager, {}],
@@ -158,11 +137,10 @@ async function main() {
     [DecisionType.creator_confirmed, DecisionOwner.creator, { confirmedRate: 4_500_000 }],
   ] as const) {
     await prisma.decision.create({
-      data: { campaignId: campaign2.id, creatorId: aurel.id, type, owner, confidence: Confidence.explicit, recordedById: type === DecisionType.creator_proposed || type === DecisionType.creator_confirmed ? ks2.id : cm1.id, decidedAt: new Date("2026-07-14"), ...extra },
+      data: { campaignId: campaign2.id, creatorId: aurel.id, type, owner, confidence: Confidence.explicit, recordedById: cao.id, decidedAt: new Date("2026-07-14"), ...extra },
     });
   }
 
-  // Citra: proposed → confirmed
   for (const [type, owner, extra] of [
     [DecisionType.creator_proposed, DecisionOwner.system, {}],
     [DecisionType.internal_approved, DecisionOwner.campaign_manager, {}],
@@ -170,7 +148,7 @@ async function main() {
     [DecisionType.creator_confirmed, DecisionOwner.creator, { confirmedRate: 2_500_000 }],
   ] as const) {
     await prisma.decision.create({
-      data: { campaignId: campaign2.id, creatorId: citra.id, type, owner, confidence: Confidence.explicit, recordedById: type === DecisionType.creator_proposed || type === DecisionType.creator_confirmed ? ks2.id : cm1.id, decidedAt: new Date("2026-07-15"), ...extra },
+      data: { campaignId: campaign2.id, creatorId: citra.id, type, owner, confidence: Confidence.explicit, recordedById: cao.id, decidedAt: new Date("2026-07-15"), ...extra },
     });
   }
 
@@ -178,7 +156,7 @@ async function main() {
 
   // ─── Campaign 3: SOMETHINC — Draft ────────
   const campaign3 = await prisma.campaign.create({
-    data: { name: "SOMETHINC Niacinamide Launch", brandId: somethinc.id, status: CampaignStatus.draft, createdById: cm2.id },
+    data: { name: "SOMETHINC Niacinamide Launch", brandId: somethinc.id, status: CampaignStatus.draft, createdById: cao.id },
   });
   await prisma.brief.create({
     data: {
@@ -197,23 +175,20 @@ async function main() {
   // ─── Audit Logs ───────────────────────────
   await prisma.auditLog.createMany({
     data: [
-      { event: "campaign.created", entityType: "campaign", entityId: campaign1.id, userId: cm1.id },
-      { event: "campaign.activated", entityType: "campaign", entityId: campaign1.id, userId: cm1.id },
-      { event: "campaign.closed", entityType: "campaign", entityId: campaign1.id, userId: cm1.id },
-      { event: "campaign.created", entityType: "campaign", entityId: campaign2.id, userId: cm1.id },
-      { event: "campaign.activated", entityType: "campaign", entityId: campaign2.id, userId: cm1.id },
-      { event: "campaign.created", entityType: "campaign", entityId: campaign3.id, userId: cm2.id },
+      { event: "campaign.created", entityType: "campaign", entityId: campaign1.id, userId: nabila.id },
+      { event: "campaign.activated", entityType: "campaign", entityId: campaign1.id, userId: nabila.id },
+      { event: "campaign.closed", entityType: "campaign", entityId: campaign1.id, userId: nabila.id },
+      { event: "campaign.created", entityType: "campaign", entityId: campaign2.id, userId: nabila.id },
+      { event: "campaign.activated", entityType: "campaign", entityId: campaign2.id, userId: nabila.id },
+      { event: "campaign.created", entityType: "campaign", entityId: campaign3.id, userId: cao.id },
     ],
   });
 
   console.log("✅ Audit logs created");
   console.log("\n🎉 Seeding complete!");
   console.log("\nLogin credentials (password: password123):");
-  console.log("  admin@buzzeryok.com  — Admin");
-  console.log("  dina@buzzeryok.com   — Campaign Manager");
-  console.log("  reza@buzzeryok.com   — Campaign Manager");
-  console.log("  sari@buzzeryok.com   — KOL Specialist");
-  console.log("  andi@buzzeryok.com   — KOL Specialist");
+  console.log("  satepacdang@gmail.com  — Admin");
+  console.log("  kerjaancao@gmail.com   — Campaign Manager");
 }
 
 main()

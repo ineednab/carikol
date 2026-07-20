@@ -1,5 +1,5 @@
 "use client"
-import { signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -9,11 +9,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { createClient } from "@/lib/supabase/client"
 
 const roleLabel: Record<string, string> = {
   campaign_manager: "Campaign Manager",
   kol_specialist:   "KOL Specialist",
   admin:            "Admin",
+  talent:           "Talent",
 }
 
 interface UserMenuProps {
@@ -21,8 +23,16 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  const router = useRouter()
+
   const initials = user.name
     ?.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase() ?? "?"
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+  }
 
   return (
     <DropdownMenu>
@@ -44,10 +54,7 @@ export function UserMenu({ user }: UserMenuProps) {
           <p className="truncate text-xs text-zinc-500">{user.email}</p>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-        >
+        <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
           <LogOut size={14} />
           Keluar
         </DropdownMenuItem>

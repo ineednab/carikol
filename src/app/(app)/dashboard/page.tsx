@@ -1,6 +1,7 @@
-import { auth } from "@/lib/auth"
+import type { Metadata } from "next"
 import Link from "next/link"
 import dayjs from "dayjs"
+import { getSession } from "@/lib/session"
 import { campaignService } from "@/modules/campaign/service/campaign.service"
 import { creatorService } from "@/modules/creator/service/creator.service"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -23,11 +24,11 @@ const statusVariant: Record<string, "default" | "secondary" | "outline" | "destr
   closed:        "outline",
 }
 
-export const metadata = { title: "Dashboard — CariKOL" }
+export const metadata: Metadata = { title: "Dashboard — CariKOL.id" }
 
 export default async function DashboardPage() {
   const [session, stats, recentCampaigns, totalCreators] = await Promise.all([
-    auth(),
+    getSession(),
     campaignService.getDashboardStats(),
     campaignService.getRecentCampaigns(5),
     creatorService.count(),
@@ -51,7 +52,7 @@ export default async function DashboardPage() {
           { label: "Baru Minggu Ini",  value: stats.campaignsThisWeek, icon: Clock },
         ].map(({ label, value, icon: Icon }) => (
           <Card key={label}>
-            <CardContent className="pt-4 pb-4">
+            <CardContent className="pb-4 pt-4">
               <div className="mb-1 flex items-center gap-1.5 text-zinc-400">
                 <Icon size={13} />
                 <span className="text-xs">{label}</span>
