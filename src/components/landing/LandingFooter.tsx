@@ -39,9 +39,11 @@ export function LandingFooter() {
           ))}
         </nav>
 
-        <p className="text-[11px] text-white/15">
-          © {new Date().getFullYear()} CariKOL.id
-        </p>
+        <div className="flex items-center gap-4">
+          <Link href="/terms"   className="text-[11px] text-white/20 hover:text-white/45 transition-colors">Terms</Link>
+          <Link href="/privacy" className="text-[11px] text-white/20 hover:text-white/45 transition-colors">Privacy</Link>
+          <span className="text-[11px] text-white/15">© {new Date().getFullYear()} CariKOL.id</span>
+        </div>
       </div>
     </footer>
   )

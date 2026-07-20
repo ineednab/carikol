@@ -37,6 +37,8 @@ export async function proxy(request: NextRequest) {
     pathname === "/login" ||
     pathname === "/internal/login" ||
     pathname === "/planner" ||
+    pathname === "/terms" ||
+    pathname === "/privacy" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/k/")
 
