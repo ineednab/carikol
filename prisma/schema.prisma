@@ -88,14 +88,30 @@ model Creator {
   createdAt        DateTime        @default(now()) @map("created_at")
   updatedAt        DateTime        @updatedAt @map("updated_at")
 
-  userAccount      User?           @relation("UserCreatorAccount")
+  userAccount      User?             @relation("UserCreatorAccount")
   decisions        Decision[]
   outcomeReviews   OutcomeReview[]
   tiktokAccount    TikTokAccount?
+  snapshots        CreatorSnapshot[]
 
   @@index([platform, niche, tier])
   @@index([isActive])
   @@map("creator")
+}
+
+model CreatorSnapshot {
+  id            String   @id @default(uuid()) @db.Uuid
+  creatorId     String   @map("creator_id") @db.Uuid
+  snapshotAt    DateTime @default(now()) @map("snapshot_at")
+  followerCount Int      @map("follower_count")
+  avgViews      Int      @default(0) @map("avg_views")
+  avgEngagement Decimal  @default(0) @map("avg_engagement") @db.Decimal(5, 2)
+  videos90d     Int      @default(0) @map("videos90d")
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@index([creatorId, snapshotAt])
+  @@map("creator_snapshot")
 }
 
 model TikTokAccount {

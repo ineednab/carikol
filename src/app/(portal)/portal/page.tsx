@@ -4,6 +4,7 @@ import { getSession } from "@/lib/session"
 import { prisma }     from "@/lib/prisma"
 import { PortalNav }  from "@/components/portal/PortalNav"
 import { DisconnectTikTok } from "@/components/portal/DisconnectTikTok"
+import { SyncButton }       from "@/components/portal/SyncButton"
 import type { AIStudioResult } from "@/modules/creator/actions/generate-ai-studio"
 import type { TikTokVideo }   from "@/lib/creator-facts"
 import {
@@ -253,15 +254,13 @@ export default async function PortalPage({
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black text-white text-sm">𝕋</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-zinc-900">@{tiktokAccount.username ?? tiktokAccount.displayName}</p>
-                <p className="text-xs text-zinc-400">
-                  {fmt(tiktokAccount.followerCount)} followers
-                  {lastSync && ` · Sync ${dateShort(lastSync)}`}
-                </p>
+                <p className="text-xs text-zinc-400">{fmt(tiktokAccount.followerCount)} followers</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
                   ✓ Tersambung
                 </span>
+                <SyncButton lastSyncAt={lastSync} />
                 <DisconnectTikTok creatorId={session.user.creatorId!} />
               </div>
             </div>
