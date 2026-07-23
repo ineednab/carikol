@@ -3,17 +3,10 @@ import { useState } from "react"
 import { RefreshCw } from "lucide-react"
 import { resyncTikTokAction } from "@/modules/creator/actions/resync-tiktok"
 import { useRouter } from "next/navigation"
+import { timeAgo } from "@/lib/format"
 
 interface Props {
   lastSyncAt: Date | null
-}
-
-function timeAgo(date: Date): string {
-  const s = Math.floor((Date.now() - date.getTime()) / 1000)
-  if (s < 60)    return "baru saja"
-  if (s < 3600)  return `${Math.floor(s / 60)}m lalu`
-  if (s < 86400) return `${Math.floor(s / 3600)}j lalu`
-  return `${Math.floor(s / 86400)}h lalu`
 }
 
 export function SyncButton({ lastSyncAt }: Props) {

@@ -13,7 +13,7 @@ export function FinalCTA() {
       <div className="mx-auto max-w-5xl" ref={ref}>
         <div className="reveal-item max-w-2xl">
           <span className="text-[11px] font-semibold tracking-[0.18em] uppercase text-[#6D28D9] block mb-6">
-            Kalau kamu ngerasa sama
+            Kalau ini terasa familiar
           </span>
           <h2 className="font-sans font-black text-white text-4xl sm:text-5xl lg:text-6xl leading-[1.0] tracking-tight mb-10">
             Creator nggak seharusnya mulai dari nol lagi.

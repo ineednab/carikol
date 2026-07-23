@@ -41,7 +41,7 @@ export function Roadmap() {
           </span>
           <h2 className="font-sans font-black text-[#18122B] text-4xl sm:text-5xl leading-[1.05] tracking-tight">
             Ini perjalanan<br />
-            yang lagi kita bangun.
+            yang sedang kita bangun.
           </h2>
         </div>
 

@@ -41,7 +41,7 @@ export function Testimonials() {
             yang ngerasain ini.
           </h2>
           <p className="mt-4 text-[12px] text-[#18122B]/30 italic">
-            Berdasarkan hasil wawancara dengan creator Indonesia.
+            Berdasarkan wawancara dengan creator Indonesia.
           </p>
         </div>
 

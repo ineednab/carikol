@@ -31,7 +31,7 @@ export default function TermsPage() {
 
       <h2 id="acceptance">1. Acceptance of Terms</h2>
       <p>
-        By accessing or using CariKOL ("the Service") at <a href="https://carikol.id">carikol.id</a>, you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, please do not use the Service. These Terms constitute a legally binding agreement between you and CariKOL.
+        By accessing or using CariKOL (&ldquo;the Service&rdquo;) at <a href="https://carikol.id">carikol.id</a>, you agree to be bound by these Terms of Service (&ldquo;Terms&rdquo;). If you do not agree to these Terms, please do not use the Service. These Terms constitute a legally binding agreement between you and CariKOL.
       </p>
       <p>
         We may update these Terms from time to time. Continued use of the Service after changes are posted constitutes your acceptance of the revised Terms. We will notify you of material changes via email or a prominent notice on the Service.
@@ -74,7 +74,7 @@ export default function TermsPage() {
       </p>
       <h3>5.1 Data We Access</h3>
       <p>
-        We only access data that you explicitly authorize through TikTok's permission dialog. This may include your public profile information, username, display name, profile photo, bio, follower count, and public video statistics.
+        We only access data that you explicitly authorize through TikTok&apos;s permission dialog. This may include your public profile information, username, display name, profile photo, bio, follower count, and public video statistics.
       </p>
       <h3>5.2 Disconnecting TikTok</h3>
       <p>
@@ -85,9 +85,9 @@ export default function TermsPage() {
         Users may request deletion of their CariKOL account and associated personal data by contacting <a href="mailto:hello@carikol.id">hello@carikol.id</a>. Upon verification, we will delete or anonymize personal data in accordance with applicable laws and our Privacy Policy, unless retention is required for legal or security purposes.
       </p>
 
-      <h3>5.4 TikTok's Terms</h3>
+      <h3>5.4 TikTok&apos;s Terms</h3>
       <p>
-        Your use of TikTok in connection with the Service is also governed by TikTok's own Terms of Service and Privacy Policy. CariKOL is not affiliated with, endorsed by, or sponsored by TikTok or ByteDance.
+        Your use of TikTok in connection with the Service is also governed by TikTok&apos;s own Terms of Service and Privacy Policy. CariKOL is not affiliated with, endorsed by, or sponsored by TikTok or ByteDance.
       </p>
 
       <h2 id="content">6. User Content</h2>
@@ -125,7 +125,7 @@ export default function TermsPage() {
 
       <h2 id="disclaimers">10. Disclaimers</h2>
       <p>
-        THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, CARIKOL DISCLAIMS ALL WARRANTIES, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+        THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. TO THE FULLEST EXTENT PERMITTED BY LAW, CARIKOL DISCLAIMS ALL WARRANTIES, INCLUDING IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
       </p>
       <p>
         We do not guarantee that the Service will be uninterrupted, error-free, or free of viruses or other harmful components. We do not warrant the accuracy or completeness of any AI-generated content.
@@ -136,12 +136,12 @@ export default function TermsPage() {
         TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, CARIKOL SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA, GOODWILL, OR OTHER INTANGIBLE LOSSES, ARISING OUT OF OR IN CONNECTION WITH YOUR USE OF OR INABILITY TO USE THE SERVICE.
       </p>
       <p>
-        IN NO EVENT SHALL CARIKOL'S TOTAL LIABILITY EXCEED THE GREATER OF (A) THE AMOUNT YOU PAID TO USE THE SERVICE IN THE 12 MONTHS PRECEDING THE CLAIM, OR (B) USD 100.
+        IN NO EVENT SHALL CARIKOL&apos;S TOTAL LIABILITY EXCEED THE GREATER OF (A) THE AMOUNT YOU PAID TO USE THE SERVICE IN THE 12 MONTHS PRECEDING THE CLAIM, OR (B) USD 100.
       </p>
 
       <h2 id="indemnification">12. Indemnification</h2>
       <p>
-        You agree to defend, indemnify, and hold harmless CariKOL and its officers, directors, employees, and agents from any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising from your use of the Service, your violation of these Terms, or your violation of any third-party rights.
+        You agree to defend, indemnify, and hold harmless CariKOL and its officers, directors, employees, and agents from any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys&apos; fees) arising from your use of the Service, your violation of these Terms, or your violation of any third-party rights.
       </p>
 
       <h2 id="termination">13. Termination</h2>
@@ -159,7 +159,7 @@ export default function TermsPage() {
 
       <h2 id="changes">15. Changes to Terms</h2>
       <p>
-        We reserve the right to modify these Terms at any time. We will provide at least 14 days' notice before material changes take effect by posting a notice on the Service or sending an email to your registered address. Your continued use of the Service after the effective date constitutes acceptance of the revised Terms.
+        We reserve the right to modify these Terms at any time. We will provide at least 14 days&apos; notice before material changes take effect by posting a notice on the Service or sending an email to your registered address. Your continued use of the Service after the effective date constitutes acceptance of the revised Terms.
       </p>
 
       <h2 id="contact">16. Contact</h2>

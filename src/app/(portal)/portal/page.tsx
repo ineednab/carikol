@@ -3,42 +3,21 @@ import Link           from "next/link"
 import { getSession } from "@/lib/session"
 import { prisma }     from "@/lib/prisma"
 import { PortalNav }  from "@/components/portal/PortalNav"
-import { DisconnectTikTok } from "@/components/portal/DisconnectTikTok"
-import { SyncButton }       from "@/components/portal/SyncButton"
+import { DisconnectTikTok }  from "@/components/portal/DisconnectTikTok"
+import { SyncButton }        from "@/components/portal/SyncButton"
+import { CopyLinkButton }    from "@/components/portal/CopyLinkButton"
 import type { AIStudioResult } from "@/modules/creator/actions/generate-ai-studio"
 import type { TikTokVideo }   from "@/lib/creator-facts"
 import {
-  Sparkles, Globe, User, BarChart2, TrendingUp,
-  Users, ChevronRight, ArrowRight, Star, Play,
+  Sparkles, BarChart2, TrendingUp,
+  Users, ChevronRight, ArrowRight, Star, Play, ExternalLink,
 } from "lucide-react"
 
 export const metadata = { title: "Portal — CariKOL" }
 
+import { fmt, formatIDR, timeAgo } from "@/lib/format"
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function timeAgo(date: Date): string {
-  const s = Math.floor((Date.now() - date.getTime()) / 1000)
-  if (s < 60)    return "baru saja"
-  if (s < 3600)  return `${Math.floor(s / 60)}m lalu`
-  if (s < 86400) return `${Math.floor(s / 3600)}j lalu`
-  return `${Math.floor(s / 86400)}h lalu`
-}
-
-function dateShort(date: Date): string {
-  return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
-}
-
-function formatIDR(n: number) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency", currency: "IDR", maximumFractionDigits: 0,
-  }).format(n)
-}
-
-function fmt(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K`
-  return n.toString()
-}
 
 function avgArr(nums: number[]): number {
   if (!nums.length) return 0
@@ -79,9 +58,15 @@ export default async function PortalPage({
   if (!session) redirect("/login")
   if (!session.user.creatorId) redirect("/portal/onboarding")
 
-  const [creator, tiktokAccount, { tiktok: tiktokStatus }] = await Promise.all([
+  const [creator, tiktokAccount, snapshots, { tiktok: tiktokStatus }] = await Promise.all([
     prisma.creator.findUnique({ where: { id: session.user.creatorId } }),
     prisma.tikTokAccount.findUnique({ where: { creatorId: session.user.creatorId } }),
+    prisma.creatorSnapshot.findMany({
+      where:   { creatorId: session.user.creatorId! },
+      orderBy: { snapshotAt: "asc" },
+      take:    10,
+      select:  { followerCount: true, snapshotAt: true },
+    }),
     searchParams,
   ])
   if (!creator) redirect("/portal/onboarding")
@@ -109,6 +94,7 @@ export default async function PortalPage({
   const rawVideos = Array.isArray(tiktokAccount?.videosJson)
     ? (tiktokAccount!.videosJson as unknown as TikTokVideo[])
     : []
+  // eslint-disable-next-line react-hooks/purity
   const NOW_S     = Math.floor(Date.now() / 1000)
   const DAY_S     = 86_400
   const recent30  = rawVideos.filter(v => v.create_time >= NOW_S - 30 * DAY_S)
@@ -148,8 +134,8 @@ export default async function PortalPage({
       badgeClass:  "bg-emerald-100 text-emerald-700",
     } : null,
     aiResult?.ai.opportunities[0] ? {
-      title:       aiResult.ai.opportunities[0].label,
-      body:        "Gap terdeteksi dari analisis konten kamu.",
+      title:       "Peluang",
+      body:        aiResult.ai.opportunities[0].label,
       badge:       "Opportunity",
       badgeClass:  "bg-amber-100 text-amber-700",
     } : null,
@@ -173,6 +159,14 @@ export default async function PortalPage({
     nextSteps.push({ href: "/portal/profile", icon: "📍", title: "Tambah Kota",                  sub: "Brand sering mencari creator lokal" })
   nextSteps.push(  { href: `/k/${creator.username}`, icon: "📤", title: "Bagikan Media Kit",     sub: "Media kit kamu siap dibagikan ke brand" })
   const topSteps = nextSteps.slice(0, 3)
+
+  // ── Video & growth data ────────────────────────────────────────────────────
+  const topVideos      = [...rawVideos].sort((a, b) => b.view_count - a.view_count).slice(0, 5)
+  const followerHistory = snapshots.map(s => s.followerCount)
+  const followerDelta  = followerHistory.length >= 2
+    ? followerHistory[followerHistory.length - 1] - followerHistory[0]
+    : null
+  const mediaKitUrl    = `https://carikol.id/k/${creator.username}`
 
   return (
     <>
@@ -283,13 +277,30 @@ export default async function PortalPage({
 
             {/* Greeting */}
             <div>
-              <h1 className="text-2xl font-bold text-zinc-900">Welcome back, {firstName}! 👋</h1>
+              <h1 className="text-2xl font-bold text-zinc-900">Hai, {firstName}! 👋</h1>
               <p className="mt-0.5 text-sm text-zinc-400">
                 {lastSync
                   ? "Ini ringkasan performa kamu selama 90 hari terakhir."
                   : "Yuk mulai setup profil creator kamu."}
               </p>
             </div>
+
+            {/* Empty state — no TikTok, no AI */}
+            {!tiktokAccount && !aiResult && (
+              <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/60 px-8 py-10 text-center">
+                <div className="mb-3 text-3xl">✦</div>
+                <h2 className="mb-1 font-semibold text-zinc-700">Profil kamu belum aktif</h2>
+                <p className="mx-auto mb-5 max-w-xs text-sm text-zinc-400">
+                  Hubungkan TikTok untuk mengimpor performa, lalu generate Creator Intelligence dalam ~15 detik.
+                </p>
+                <Link
+                  href="/auth/tiktok"
+                  className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
+                >
+                  Hubungkan TikTok →
+                </Link>
+              </div>
+            )}
 
             {/* Onboarding checklist — shown until profile is 100% complete */}
             {profilePct < 100 && (
@@ -352,7 +363,7 @@ export default async function PortalPage({
                   sub={
                     viewDelta !== null
                       ? <span className={`text-xs font-medium ${viewDelta >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                          {viewDelta >= 0 ? "↑" : "↓"}{Math.abs(viewDelta)}% vs 30h lalu
+                          {viewDelta >= 0 ? "↑" : "↓"}{Math.abs(viewDelta)}% vs 30 hari lalu
                         </span>
                       : avgViews > 0
                       ? <span className="text-[10px] text-zinc-400">per video</span>
@@ -396,6 +407,13 @@ export default async function PortalPage({
               </div>
             )}
 
+            {/* Freshness indicator */}
+            {lastSync && (
+              <p className="text-[10px] text-zinc-400 -mt-2">
+                Data diperbarui {lastSync.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })} · {timeAgo(lastSync)}
+              </p>
+            )}
+
             {/* AI Insights */}
             {insightCards.length > 0 && (
               <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
@@ -403,7 +421,7 @@ export default async function PortalPage({
                   <div className="flex items-center gap-2">
                     <Sparkles size={13} className="text-violet-500" />
                     <span className="text-xs font-semibold uppercase tracking-widest text-violet-500">
-                      AI Insights untuk Kamu
+                      Insight AI untuk Kamu
                     </span>
                   </div>
                   <Link href="/portal/studio" className="text-xs font-medium text-violet-500 hover:text-violet-700">
@@ -427,7 +445,7 @@ export default async function PortalPage({
             {/* Primary Topics (replaces Niche) */}
             {topCategories.length > 0 && (
               <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">Primary Topics</p>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">Topik Utama</p>
                 <div className="space-y-2.5">
                   {topCategories.map(({ name, pct }) => (
                     <div key={name} className="flex items-center gap-3">
@@ -473,6 +491,42 @@ export default async function PortalPage({
               </div>
             )}
 
+            {/* Top Videos */}
+            {topVideos.length > 0 && (
+              <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">Video Terbaik</p>
+                  <span className="text-[10px] text-zinc-400">berdasarkan views</span>
+                </div>
+                <div className="divide-y divide-zinc-100">
+                  {topVideos.map((v, i) => (
+                    <a
+                      key={v.id}
+                      href={v.share_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex items-start gap-3 py-3 first:pt-0 last:pb-0"
+                    >
+                      <span className="mt-0.5 w-4 shrink-0 text-[10px] font-bold text-zinc-300">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="truncate text-sm font-medium text-zinc-800 group-hover:text-violet-600 transition">
+                          {v.title || "—"}
+                        </p>
+                        <div className="mt-1 flex gap-3">
+                          <span className="text-[10px] text-zinc-400">👁 {fmt(v.view_count)}</span>
+                          <span className="text-[10px] text-zinc-400">❤️ {fmt(v.like_count)}</span>
+                          <span className="text-[10px] text-zinc-400">💬 {fmt(v.comment_count)}</span>
+                        </div>
+                      </div>
+                      <ExternalLink size={11} className="mt-1 shrink-0 text-zinc-200 group-hover:text-violet-400 transition" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Quick Actions */}
             <div>
               <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Aksi Cepat</p>
@@ -501,6 +555,44 @@ export default async function PortalPage({
 
           {/* ── Sidebar ─────────────────────────────────────────────────────── */}
           <div className="space-y-4">
+
+            {/* Share Media Kit */}
+            <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
+              <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Bagikan Media Kit</p>
+              <p className="mb-3 truncate rounded-lg bg-zinc-50 px-3 py-2 font-mono text-[11px] text-zinc-500">
+                carikol.id/k/{creator.username}
+              </p>
+              <div className="flex gap-2">
+                <CopyLinkButton url={mediaKitUrl} />
+                <Link
+                  href={`/k/${creator.username}`}
+                  target="_blank"
+                  className="flex items-center justify-center rounded-xl border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-50"
+                >
+                  <ExternalLink size={12} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Follower Growth */}
+            {followerHistory.length >= 2 && (
+              <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">Pertumbuhan Followers</p>
+                  {followerDelta !== null && (
+                    <span className={`text-xs font-bold ${followerDelta >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {followerDelta >= 0 ? "+" : ""}{fmt(followerDelta)}
+                    </span>
+                  )}
+                </div>
+                <Sparkline values={followerHistory} />
+                <p className="mt-2 text-[10px] text-zinc-400">
+                  {snapshots[0].snapshotAt.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                  {" → "}
+                  {snapshots[snapshots.length - 1].snapshotAt.toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                </p>
+              </div>
+            )}
 
             {/* Next Steps */}
             <div className="rounded-2xl border border-zinc-200/60 bg-white p-5">
@@ -539,7 +631,7 @@ export default async function PortalPage({
               </div>
               <div className="space-y-2.5">
                 <CompletionItem done={!!tiktokAccount}   label="TikTok terhubung"                 points={30} />
-                <CompletionItem done={!!aiResult}        label="Creator Intelligence generated"    points={40} />
+                <CompletionItem done={!!aiResult}        label="Creator Intelligence dibuat"        points={40} />
                 <CompletionItem done={!!creator.notes}   label="Bio ditambahkan"                  points={15} />
                 <CompletionItem done={!!creator.city}    label="Kota ditambahkan"                 points={15} />
               </div>
@@ -621,5 +713,24 @@ function CompletionItem({ done, label, points }: { done: boolean; label: string;
       <span className={`flex-1 text-xs ${done ? "text-zinc-400 line-through" : "text-zinc-700"}`}>{label}</span>
       <span className="text-[10px] text-zinc-400">+{points}</span>
     </div>
+  )
+}
+
+function Sparkline({ values }: { values: number[] }) {
+  if (values.length < 2) return null
+  const min   = Math.min(...values)
+  const max   = Math.max(...values)
+  const range = max - min || 1
+  const W = 100, H = 32
+  const pts = values.map((v, i) => [
+    (i / (values.length - 1)) * W,
+    H - ((v - min) / range) * (H - 6) - 3,
+  ])
+  const d    = pts.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ")
+  const isUp = values[values.length - 1] >= values[0]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-8 w-full">
+      <path d={d} fill="none" stroke={isUp ? "#10b981" : "#f87171"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }

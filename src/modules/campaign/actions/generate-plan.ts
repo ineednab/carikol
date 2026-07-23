@@ -1,6 +1,7 @@
 "use server"
-import { generateJSON, generateJSONArray } from "@/lib/ai/client"
-import { prisma } from "@/lib/prisma"
+import { generateJSON, generateJSONArray }                    from "@/lib/ai/client"
+import { prisma }                                             from "@/lib/prisma"
+import { buildCampaignPlanPrompt, buildCreatorMatchPrompt }  from "@/lib/ai/prompts/campaign-plan"
 
 export type CampaignPlan = {
   objective: string
@@ -56,33 +57,7 @@ export async function generateCampaignPlanAction(formData: FormData): Promise<
   }
   const platform = rawPlatform as ValidPlatform
 
-  const prompt = `Kamu adalah konsultan KOL marketing Indonesia. Buat campaign plan untuk UMKM berikut.
-
-Data Campaign:
-- Produk/Bisnis: ${product}
-- Budget total: Rp ${budget}
-- Target audience: ${target}
-- Platform: ${platform}
-- Tujuan (jika ada): ${objective || "tidak disebutkan"}
-
-Return JSON ONLY:
-{
-  "objective": "tujuan campaign 1 kalimat",
-  "creatorType": "tipe creator yang ideal (tier, niche, karakteristik)",
-  "deliverables": ["deliverable 1", "deliverable 2", "deliverable 3"],
-  "timeline": "estimasi waktu campaign",
-  "estimatedKPI": {
-    "reach": "estimasi reach",
-    "impressions": "estimasi impressions",
-    "engagement": "estimasi total engagement"
-  },
-  "brief": "campaign brief singkat 2-3 kalimat yang bisa langsung dikirim ke creator",
-  "budgetBreakdown": {
-    "creatorFee": "alokasi untuk creator fee",
-    "production": "alokasi untuk produksi konten",
-    "note": "saran penggunaan budget"
-  }
-}`
+  const prompt = buildCampaignPlanPrompt({ product, budget, target, platform, objective })
 
   try {
     const plan = await generateJSON<CampaignPlan>(prompt, 1024)
@@ -96,13 +71,13 @@ Return JSON ONLY:
 
     let matchedCreators: CreatorMatch[] = []
     if (creators.length > 0) {
-      const matchPrompt = `Kamu adalah analis KOL marketing. Untuk campaign "${product}" yang menargetkan "${target}", berikan match score (0-100) dan alasan singkat (max 12 kata) untuk setiap creator.
-
-Creators:
-${creators.map((c, i) => `${i + 1}. ${c.name} (@${c.username}) - ${c.niche}, ${c.followerCount} follower, ER ${c.engagementRate}%`).join("\n")}
-
-Return JSON array ONLY:
-[{"score": 95, "reason": "alasan singkat max 12 kata"}, ...]`
+      const matchPrompt = buildCreatorMatchPrompt(product, target, creators.map(c => ({
+        name:           c.name,
+        username:       c.username,
+        niche:          c.niche,
+        followerCount:  c.followerCount,
+        engagementRate: Number(c.engagementRate),
+      })))
 
       const scores = await generateJSONArray<{ score: number; reason: string }>(matchPrompt, 512) ?? []
 

@@ -1,9 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse } from "next/server"
 
 const TIKTOK_AUTH_URL = "https://www.tiktok.com/v2/auth/authorize/"
 const SCOPES = ["user.info.basic", "user.info.profile", "user.info.stats", "video.list"]
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://carikol.id"
   const state   = crypto.randomUUID()
 

@@ -3,6 +3,7 @@ import { createServerClient }             from "@supabase/ssr"
 import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { createHash }                     from "crypto"
 import { prisma }                         from "@/lib/prisma"
+import { tierFromCount }                  from "@/lib/format"
 
 const APP_URL      = process.env.NEXT_PUBLIC_APP_URL ?? "https://carikol.id"
 const TOKEN_URL    = "https://open.tiktokapis.com/v2/oauth/token/"
@@ -206,13 +207,6 @@ export async function GET(request: NextRequest) {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
-
-function tierFromCount(n: number): "nano" | "micro" | "macro" | "mega" {
-  if (n >= 1_000_000) return "mega"
-  if (n >= 100_000)   return "macro"
-  if (n >= 10_000)    return "micro"
-  return "nano"
-}
 
 async function ensureUniqueUsername(base: string): Promise<string> {
   const exists = await prisma.creator.findUnique({ where: { username: base } })

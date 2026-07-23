@@ -2,10 +2,7 @@
 import { useState } from "react"
 import { Sparkles, RefreshCw } from "lucide-react"
 import { generateRateCardAction, type RateCardResult } from "@/modules/creator/actions/generate-rate-card"
-
-function formatIDR(n: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n)
-}
+import { formatIDR } from "@/lib/format"
 
 export function RateCardGenerator({ creatorName }: { creatorName: string }) {
   const [loading, setLoading] = useState(false)

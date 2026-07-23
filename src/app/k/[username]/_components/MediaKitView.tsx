@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Check, Copy, MapPin, Users, TrendingUp, Sparkles, MessageCircle } from "lucide-react"
 import { CariKOLLogo } from "@/components/shared/CariKOLLogo"
 import type { AIStudioResult } from "@/modules/creator/actions/generate-ai-studio"
+import { fmt, formatIDR } from "@/lib/format"
 
 const PLATFORM_LABEL: Record<string, string> = {
   tiktok: "TikTok", instagram: "Instagram", youtube: "YouTube", other: "Other",
@@ -17,18 +18,9 @@ const TIER_COLOR: Record<string, { bg: string; text: string; label: string }> = 
   mega:  { bg: "bg-amber-100",  text: "text-amber-700",  label: "Mega" },
 }
 
-function formatIDR(n: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n)
-}
 function formatFollower(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
-  return n.toString()
-}
-
-function fmt(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K`
   return n.toString()
 }
 

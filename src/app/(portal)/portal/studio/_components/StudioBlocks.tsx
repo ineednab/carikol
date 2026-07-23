@@ -1,16 +1,7 @@
 "use client"
 import { Activity, BarChart2, Layers, TrendingUp, Sparkles, CreditCard, Zap } from "lucide-react"
 import type { AIStudioResult } from "@/modules/creator/actions/generate-ai-studio"
-
-function fmt(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K`
-  return n.toString()
-}
-
-function formatIDR(n: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n)
-}
+import { fmt, formatIDR } from "@/lib/format"
 
 function SectionHeader({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (

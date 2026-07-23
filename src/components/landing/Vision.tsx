@@ -2,7 +2,7 @@
 import { useScrollReveal } from "./useScrollReveal"
 
 const OUTCOMES = [
-  "Satu Creator Passport. Tidak perlu jelasin diri lagi ke setiap agency.",
+  "Satu Creator Profile. Tidak perlu jelasin diri lagi ke setiap agency.",
   "Track record kamu berbicara sebelum kamu ngomong.",
   "Setiap campaign memperkuat reputasimu secara otomatis.",
 ]

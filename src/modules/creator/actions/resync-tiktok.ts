@@ -3,6 +3,7 @@ import { getSession }          from "@/lib/session"
 import { prisma }              from "@/lib/prisma"
 import { processCreatorFacts, type TikTokVideo } from "@/lib/creator-facts"
 import { generateAIStudioAction }                from "./generate-ai-studio"
+import { tierFromCount }                         from "@/lib/format"
 
 const TOKEN_URL    = "https://open.tiktokapis.com/v2/oauth/token/"
 const PROFILE_FIELDS = "open_id,avatar_url,display_name,username,bio_description,follower_count,following_count,likes_count,video_count"
@@ -150,9 +151,3 @@ export async function resyncTikTokAction(): Promise<ResyncResult> {
   }
 }
 
-function tierFromCount(n: number): "nano" | "micro" | "macro" | "mega" {
-  if (n >= 1_000_000) return "mega"
-  if (n >= 100_000)   return "macro"
-  if (n >= 10_000)    return "micro"
-  return "nano"
-}

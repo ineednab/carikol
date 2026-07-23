@@ -164,7 +164,7 @@ export function EarlyCreatorsPopup() {
 
   useEffect(() => {
     if (open) requestAnimationFrame(() => requestAnimationFrame(() => setVisible(true)))
-    else setVisible(false)
+    else requestAnimationFrame(() => setVisible(false))
   }, [open])
 
   useEffect(() => {

@@ -6,6 +6,7 @@
  * - Every field must be derivable from the input data.
  * - If data is insufficient, mark it explicitly (not silently filled).
  */
+import { fmt } from "@/lib/format"
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -149,12 +150,6 @@ function median(nums: number[]): number {
 function avg(nums: number[]): number {
   if (nums.length === 0) return 0
   return Math.round(nums.reduce((s, n) => s + n, 0) / nums.length)
-}
-
-function fmt(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(0)}K`
-  return n.toString()
 }
 
 function classifyVideo(title: string): string[] {

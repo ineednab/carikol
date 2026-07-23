@@ -28,10 +28,10 @@ export default function PrivacyPage() {
 
       <h2 id="introduction">1. Introduction</h2>
       <p>
-        CariKOL ("we," "our," or "us") is committed to protecting your personal data. This Privacy Policy explains how we collect, use, store, and protect your information when you use CariKOL at <a href="https://carikol.id">https://carikol.id</a>.
+        CariKOL (&ldquo;we,&rdquo; &ldquo;our,&rdquo; or &ldquo;us&rdquo;) is committed to protecting your personal data. This Privacy Policy explains how we collect, use, store, and protect your information when you use CariKOL at <a href="https://carikol.id">https://carikol.id</a>.
       </p>
       <p>
-        We comply with applicable data protection laws, including Indonesia's Personal Data Protection Law (UU PDP) and privacy principles consistent with the General Data Protection Regulation (GDPR). We never sell your personal data.
+        We comply with applicable data protection laws, including Indonesia&apos;s Personal Data Protection Law (UU PDP) and privacy principles consistent with the General Data Protection Regulation (GDPR). We never sell your personal data.
       </p>
 
       <h2 id="data-collected">2. Information We Collect</h2>
@@ -183,7 +183,7 @@ export default function PrivacyPage() {
         Your information may be processed outside Indonesia by trusted infrastructure providers. Appropriate safeguards are applied in accordance with applicable law.
       </p>
 
-      <h2 id="children">10. Children's Privacy</h2>
+      <h2 id="children">10. Children&apos;s Privacy</h2>
       <p>
         CariKOL is not intended for children under 13 years old. If we learn we have collected personal information from a child under 13 without appropriate consent, we will delete it promptly.
       </p>

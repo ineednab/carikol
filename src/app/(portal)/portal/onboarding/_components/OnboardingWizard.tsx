@@ -252,7 +252,7 @@ export function OnboardingWizard({ prefill }: Props) {
               <p className="text-xs font-semibold uppercase tracking-widest text-violet-500">
                 {PLATFORMS.find((p) => p.value === platform)?.emoji} {PLATFORMS.find((p) => p.value === platform)?.label}
               </p>
-              <h1 className="mt-1 text-xl font-bold text-zinc-900">What's your handle?</h1>
+              <h1 className="mt-1 text-xl font-bold text-zinc-900">What&apos;s your handle?</h1>
               <p className="mt-1 text-sm text-zinc-500">The username brands will see</p>
             </div>
 
