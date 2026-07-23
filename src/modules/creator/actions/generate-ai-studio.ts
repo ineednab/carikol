@@ -39,9 +39,7 @@ export type AIStudioResult = {
 
 // ── Validator ─────────────────────────────────────────────────────────────────
 
-function validateAIOutput(ai: AIGenerated, facts: CreatorFacts): AIGenerated {
-  const factSet = new Set(facts.facts)
-
+function validateAIOutput(ai: AIGenerated): AIGenerated {
   const validatedObservations = (ai.observations ?? [])
     .filter((o) => {
       // Reject any observation that references audience demographics
@@ -57,10 +55,6 @@ function validateAIOutput(ai: AIGenerated, facts: CreatorFacts): AIGenerated {
   const validatedOpportunities = (ai.opportunities ?? [])
     .filter((o) => o.label)
     .slice(0, 3)
-
-  // Add missing fact check — if observation evidence not in facts, keep it but don't reject
-  // (AI may paraphrase rather than quote verbatim)
-  void factSet
 
   return {
     ...ai,
@@ -107,7 +101,7 @@ export async function generateAIStudioAction(): Promise<
     const aiRaw = await generateJSON<AIGenerated>(prompt, 1024)
     if (!aiRaw) return { success: false, error: "Gagal memproses respons AI." }
 
-    const ai = validateAIOutput(aiRaw, facts)
+    const ai = validateAIOutput(aiRaw)
 
     const result: AIStudioResult = {
       facts,

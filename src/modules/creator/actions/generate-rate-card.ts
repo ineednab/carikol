@@ -45,12 +45,12 @@ export async function generateRateCardAction(): Promise<
     const data = await generateJSON<RateCardResult>(prompt, 1024)
     if (!data) return { success: false, error: "Gagal memproses respons AI." }
 
-    const prices = data.items.map((i) => i.price)
+    const prices = data.items.map((i) => i.price).filter((p) => p > 0)
     await prisma.creator.update({
       where: { id: creator.id },
       data: {
-        typicalRateMin: Math.min(...prices),
-        typicalRateMax: Math.max(...prices),
+        typicalRateMin: prices.length > 0 ? Math.min(...prices) : null,
+        typicalRateMax: prices.length > 0 ? Math.max(...prices) : null,
         rateCardJson: data as object,
       },
     })

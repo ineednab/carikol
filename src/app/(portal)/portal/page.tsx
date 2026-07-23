@@ -17,6 +17,9 @@ export const metadata = { title: "Portal — CariKOL" }
 
 import { fmt, formatIDR, timeAgo } from "@/lib/format"
 
+const NOW_S = Math.floor(Date.now() / 1000)
+const DAY_S = 86_400
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function avgArr(nums: number[]): number {
@@ -94,9 +97,6 @@ export default async function PortalPage({
   const rawVideos = Array.isArray(tiktokAccount?.videosJson)
     ? (tiktokAccount!.videosJson as unknown as TikTokVideo[])
     : []
-  // eslint-disable-next-line react-hooks/purity
-  const NOW_S     = Math.floor(Date.now() / 1000)
-  const DAY_S     = 86_400
   const recent30  = rawVideos.filter(v => v.create_time >= NOW_S - 30 * DAY_S)
   const prev30    = rawVideos.filter(v => v.create_time >= NOW_S - 60 * DAY_S && v.create_time < NOW_S - 30 * DAY_S)
   const recentAvg = avgArr(recent30.map(v => v.view_count))
