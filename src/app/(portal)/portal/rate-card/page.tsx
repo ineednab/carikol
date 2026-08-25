@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/session"
 import { prisma } from "@/lib/prisma"
-import { PortalNav } from "@/components/portal/PortalNav"
+import { PortalShell } from "@/components/portal/PortalShell"
 import { RateCardGenerator } from "./_components/RateCardGenerator"
 
 export const metadata = { title: "Rate Card — CariKOL" }
@@ -17,9 +17,8 @@ export default async function RateCardPage() {
   if (!creator) redirect("/portal/onboarding")
 
   return (
-    <>
-      <PortalNav creator={{ name: session.user.name ?? "", username: creator.username, tier: creator.tier }} />
-      <main className="mx-auto max-w-2xl px-6 py-10">
+    <PortalShell user={{ name: session.user.name, email: creator.contact }}>
+      <div className="mx-auto max-w-2xl px-6 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-zinc-900">Rate Card</h1>
           <p className="mt-1 text-sm text-zinc-500">
@@ -27,7 +26,7 @@ export default async function RateCardPage() {
           </p>
         </div>
         <RateCardGenerator creatorName={creator.name} />
-      </main>
-    </>
+      </div>
+    </PortalShell>
   )
 }

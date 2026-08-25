@@ -11,5 +11,5 @@ export async function loginAction(email: string, password: string): Promise<stri
     return "Email atau password salah."
   }
 
-  redirect("/")
+  redirect("/dashboard")
 }

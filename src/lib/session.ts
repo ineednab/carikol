@@ -1,6 +1,16 @@
 import { createClient } from "@/lib/supabase/server"
 import { prisma } from "@/lib/prisma"
 
+const SESSION_USER_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  role: true,
+  creatorId: true,
+  createdAt: true,
+  updatedAt: true,
+} as const
+
 export async function getAuthUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,6 +32,7 @@ export async function getSession() {
 
   const dbUser = await prisma.user.findUnique({
     where: { email: authUser.email },
+    select: SESSION_USER_SELECT,
   })
   if (!dbUser) return null
 

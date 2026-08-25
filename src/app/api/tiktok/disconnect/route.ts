@@ -12,7 +12,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  await prisma.tikTokAccount.delete({ where: { creatorId } })
+  await prisma.socialAccount.deleteMany({
+    where: { creatorId, platformId: "tiktok" },
+  })
 
   return NextResponse.json({ ok: true })
 }

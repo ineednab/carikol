@@ -1,383 +1,479 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Check, ChevronRight, RefreshCw, Sparkles } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { AlertCircle, ArrowRight, Check, ChevronDown, ChevronUp, Loader2, Plus, X } from "lucide-react"
 import { onboardingAction } from "@/modules/creator/actions/onboarding"
-import { generateAIStudioAction } from "@/modules/creator/actions/generate-ai-studio"
+import { PortalSidebar } from "@/components/portal/PortalSidebar"
 
-const PLATFORMS = [
-  { value: "tiktok",    label: "TikTok",    emoji: "🎵" },
-  { value: "instagram", label: "Instagram", emoji: "📸" },
-  { value: "youtube",   label: "YouTube",   emoji: "▶️" },
-  { value: "other",     label: "Lainnya",   emoji: "🌐" },
+const INPUT = "h-10 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-300 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 focus:outline-none"
+const LABEL = "block text-[11px] font-semibold text-zinc-600"
+const HINT  = "text-[10px] text-zinc-400"
+const CARD  = "rounded-2xl border border-zinc-200/70 bg-white p-4"
+const SECTION = "text-[10px] font-semibold uppercase tracking-widest text-zinc-400"
+const chip = (active: boolean, disabled = false) =>
+  `rounded-full border px-2.5 py-1 text-[11px] font-medium transition ${
+    active
+      ? "border-violet-400 bg-violet-50 text-violet-700"
+      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300"
+  } ${disabled ? "cursor-not-allowed opacity-40" : ""}`
+
+const CATEGORIES = [
+  "Beauty", "Skincare", "Lifestyle", "Fashion", "Food",
+  "Fitness", "Tech", "Gaming", "Travel", "Parenting",
+  "Education", "Finance", "Entertainment", "Other",
+]
+const POPULAR_CATEGORIES = CATEGORIES.slice(0, 6)
+const REST_CATEGORIES = CATEGORIES.slice(6)
+
+// Deskripsi hanya sebagai tooltip (title) — tidak dirender agar onboarding ringan.
+const TALENT_TYPES = [
+  { id: "CREATOR",   label: "Creator / Influencer", desc: "Bikin konten reguler di akun sendiri — edukasi, hiburan, atau review." },
+  { id: "KOL",       label: "KOL",                  desc: "Punya otoritas di niche tertentu; rekomendasinya dipercaya audiens. Min. 10.000 followers." },
+  { id: "AFFILIATE", label: "Affiliate",            desc: "Promosi produk lewat link/kode — pendapatan dari komisi penjualan." },
+  { id: "OTHER",     label: "Lainnya",              desc: "Tipe lain yang belum tercakup di atas." },
+] as const
+type TalentType = typeof TALENT_TYPES[number]["id"]
+
+// Provinsi Indonesia (38, termasuk 4 provinsi baru di Papua)
+const PROVINCES = [
+  "Aceh", "Sumatera Utara", "Sumatera Barat", "Riau", "Jambi", "Sumatera Selatan",
+  "Bengkulu", "Lampung", "Kepulauan Bangka Belitung", "Kepulauan Riau", "DKI Jakarta",
+  "Jawa Barat", "Jawa Tengah", "DI Yogyakarta", "Jawa Timur", "Banten", "Bali",
+  "Nusa Tenggara Barat", "Nusa Tenggara Timur", "Kalimantan Barat", "Kalimantan Tengah",
+  "Kalimantan Selatan", "Kalimantan Timur", "Kalimantan Utara", "Sulawesi Utara",
+  "Sulawesi Tengah", "Sulawesi Selatan", "Sulawesi Tenggara", "Gorontalo", "Sulawesi Barat",
+  "Maluku", "Maluku Utara", "Papua", "Papua Barat", "Papua Selatan", "Papua Tengah",
+  "Papua Pegunungan", "Papua Barat Daya",
 ]
 
-const TIERS = [
-  { value: "nano",  label: "Nano",  range: "Di bawah 10K",   emoji: "🌱" },
-  { value: "micro", label: "Micro", range: "10K – 100K",     emoji: "⚡" },
-  { value: "macro", label: "Macro", range: "100K – 1 Juta",  emoji: "🚀" },
-  { value: "mega",  label: "Mega",  range: "Di atas 1 Juta", emoji: "🌟" },
-]
+// Apa yang terjadi setelah submit (form-nya sendiri = "kirim", jadi tak diulang di sini).
+const STEPS = ["Kami verifikasi", "Profil aktif", "Kamu bisa lihat job"]
 
-const NICHES = [
-  "Beauty & Skincare", "Fashion", "Food & Kuliner", "Lifestyle",
-  "Fitness & Health", "Tech & Gadgets", "Gaming", "Travel",
-  "Comedy", "Education", "Music", "Finance", "Business", "Lainnya",
-]
+const BIO_MAX = 200
+const MAX_SOCIALS = 6
 
-const BUILDING_STEPS = [
-  "Understanding your niche",
-  "Analyzing your creator profile",
-  "Estimating commercial positioning",
-  "Matching suitable brand categories",
-  "Preparing your Digital Passport",
-]
+let ROW_SEQ = 0
+const newRow = (): SocialRow => ({ uid: ROW_SEQ++, platformId: "", profileUrl: "" })
+
+type SocialRow = { uid: number; platformId: string; profileUrl: string; oauthDone?: boolean }
+
+type TikTokProfile = {
+  openId: string; username: string; displayName: string
+  avatarUrl: string | null; profileUrl: string; followerCount: number
+}
+
+function fmtNum(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`
+  return String(n)
+}
 
 interface Props {
   prefill: { name: string; email: string; avatarUrl: string }
+  platforms: { id: string; name: string }[]
+  tiktokProfile?: TikTokProfile | null
 }
 
-export function OnboardingWizard({ prefill }: Props) {
+export function OnboardingWizard({ prefill, platforms, tiktokProfile }: Props) {
   const router = useRouter()
-  const [step, setStep]           = useState(1)
-  const [platform, setPlatform]   = useState("")
-  const [username, setUsername]   = useState("")
-  const [tier, setTier]           = useState("")
-  const [niches, setNiches]       = useState<string[]>([])
+
+  const [name, setName]           = useState(prefill.name)
+  const [bio, setBio]             = useState("")
+  const [categories, setCategories] = useState<string[]>([])
+  const [showAllCats, setShowAllCats] = useState(false)
+  const [province, setProvince]   = useState("")
   const [city, setCity]           = useState("")
-  const [contact, setContact]     = useState(prefill.email)
-  const [error, setError]         = useState<string | null>(null)
+  const [whatsapp, setWhatsapp]   = useState("")
+  const [talentTypes, setTalentTypes] = useState<TalentType[]>([])
+  const [socials, setSocials]     = useState<SocialRow[]>(() => [newRow(), newRow()])
+  const [agreeTos, setAgreeTos]   = useState(false)
+  const [loading, setLoading]     = useState(false)
   const [fieldError, setFieldError] = useState<string | null>(null)
-  const [buildingStep, setBuildingStep] = useState(0)
-  const [creatorUsername, setCreatorUsername] = useState("")
+  const [error, setError]         = useState<string | null>(null)
 
-  const progress = step <= 4 ? step * 20 : 100
+  // Restore form state after TikTok OAuth redirect
+  useEffect(() => {
+    if (!tiktokProfile) return
+    const tiktokRow: SocialRow = {
+      uid: ROW_SEQ++, platformId: "tiktok",
+      profileUrl: tiktokProfile.profileUrl, oauthDone: true,
+    }
+    const raw = sessionStorage.getItem("carikol_onboarding_draft")
+    if (raw) {
+      try {
+        const d = JSON.parse(raw)
+        if (d.name)        setName(d.name)
+        if (d.bio)         setBio(d.bio)
+        if (d.categories)  setCategories(d.categories)
+        if (d.province)    setProvince(d.province)
+        if (d.city)        setCity(d.city)
+        if (d.whatsapp)    setWhatsapp(d.whatsapp)
+        if (d.talentTypes) setTalentTypes(d.talentTypes)
+        const others = (d.socials ?? []).filter((s: SocialRow) => s.platformId !== "tiktok")
+        setSocials([tiktokRow, ...others.length ? others : [newRow()]])
+        sessionStorage.removeItem("carikol_onboarding_draft")
+      } catch { setSocials([tiktokRow, newRow()]) }
+    } else {
+      setSocials([tiktokRow, newRow()])
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const toggleNiche = (n: string) =>
-    setNiches((prev) => prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n])
+  const handleTikTokOAuth = () => {
+    sessionStorage.setItem("carikol_onboarding_draft", JSON.stringify({
+      name, bio, categories, province, city, whatsapp, talentTypes, socials,
+    }))
+    window.location.href = "/auth/tiktok?mode=onboarding"
+  }
 
-  const handleBuild = async () => {
-    if (niches.length === 0) { setFieldError("Pilih minimal satu niche"); return }
-    if (!city.trim()) { setFieldError("Kota wajib diisi"); return }
-    if (!contact.trim()) { setFieldError("Kontak wajib diisi"); return }
+  const toggleCategory = (c: string) =>
+    setCategories(prev =>
+      prev.includes(c)
+        ? prev.filter(x => x !== c)
+        : prev.length < 5 ? [...prev, c] : prev
+    )
+
+  const toggleTalentType = (t: TalentType) =>
+    setTalentTypes(prev => (prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]))
+
+  const renderCategoryChip = (c: string) => {
+    const on = categories.includes(c)
+    return (
+      <button key={c} type="button" onClick={() => toggleCategory(c)} className={chip(on, !on && categories.length >= 5)}>
+        {on && <Check size={10} className="mr-1 inline" />}{c}
+      </button>
+    )
+  }
+
+  const updateSocial = (i: number, patch: Partial<SocialRow>) =>
+    setSocials(prev => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)))
+  const addSocial = () =>
+    setSocials(prev => (prev.length < MAX_SOCIALS ? [...prev, newRow()] : prev))
+  const removeSocial = (i: number) =>
+    setSocials(prev => (prev.length > 2 ? prev.filter((_, idx) => idx !== i) : prev))
+
+  const handleSubmit = async () => {
+    if (!name.trim()) { setFieldError("Nama wajib diisi"); return }
+    if (talentTypes.length === 0) { setFieldError("Pilih minimal satu tipe talent"); return }
+    if (categories.length === 0) { setFieldError("Pilih minimal satu kategori"); return }
+    if (!whatsapp.trim()) { setFieldError("Nomor WhatsApp wajib diisi"); return }
+
+    const filledSocials = socials.filter(s => s.platformId && (s.oauthDone || s.profileUrl.trim()))
+    if (filledSocials.length < 2) { setFieldError("Tambahkan minimal 2 akun sosial (platform + link)"); return }
+    if (new Set(filledSocials.map(s => s.platformId)).size !== filledSocials.length) {
+      setFieldError("Pilih platform berbeda untuk tiap akun"); return
+    }
+    if (!agreeTos) { setFieldError("Setujui Syarat & Kebijakan Privasi untuk melanjutkan"); return }
 
     setFieldError(null)
-    setStep(5)
+    setError(null)
+    setLoading(true)
 
-    const slug = username.toLowerCase().replace(/\s/g, "")
-    setCreatorUsername(slug)
-
-    // Step 1: save creator to DB
     const result = await onboardingAction({
-      name:         prefill.name || username,
-      username:     slug,
-      platform:     platform as "tiktok" | "instagram" | "youtube" | "other",
-      followerTier: tier as "nano" | "micro" | "macro" | "mega",
-      niche:        niches.join(", "),
-      city,
-      contact,
+      name: name.trim(),
+      bio: bio.trim() || undefined,
+      categories,
+      province: province || undefined,
+      city: city.trim() || undefined,
+      contact: whatsapp.trim(),
+      talentTypes,
+      socials: filledSocials.map(s => ({
+        platformId: s.platformId,
+        profileUrl: s.oauthDone ? s.profileUrl : s.profileUrl.trim(),
+      })),
+      agreeTos: true,
     })
+    setLoading(false)
 
-    if (!result.success) {
-      setStep(4)
-      setError(result.errors._root ?? Object.values(result.errors)[0] ?? "Terjadi kesalahan.")
-      return
-    }
-
-    // Animate building steps
-    for (let i = 0; i < BUILDING_STEPS.length; i++) {
-      await new Promise((r) => setTimeout(r, 900))
-      setBuildingStep(i + 1)
-    }
-
-    // Step 2: generate Creator Identity
-    const aiResult = await generateAIStudioAction()
-
-    if (aiResult.success) {
-      setStep(6) // success screen
+    if (result.success) {
+      router.push("/portal")
     } else {
-      router.push("/portal/studio") // let them generate manually
+      const firstErr = Object.values(result.errors)[0]
+      setError(firstErr ?? "Terjadi kesalahan.")
     }
   }
 
-  // ── Step 6: Success ───────────────────────────────────────────────────────
-  if (step === 6) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F7F7F5] px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="mb-6 text-6xl">🎉</div>
-          <h2 className="text-2xl font-bold text-zinc-900">Your Creator Identity is ready.</h2>
-          <p className="mt-3 text-sm text-zinc-500">You&apos;re now discoverable by brands.</p>
-
-          {platform === "tiktok" && (
-            <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-5 text-left">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black text-white text-lg">
-                  𝕋
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-zinc-900">Connect TikTok</p>
-                  <p className="text-xs text-zinc-400">Auto-import followers, stats & videos</p>
-                </div>
-              </div>
-              <Link
-                href="/auth/tiktok"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-black py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 active:scale-95"
-              >
-                Connect TikTok Account
-              </Link>
-            </div>
-          )}
-
-          <Link
-            href={`/k/${creatorUsername}`}
-            target="_blank"
-            className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:opacity-90"
-          >
-            <Sparkles size={15} />
-            View My Digital Passport
-          </Link>
-          <p className="mt-4">
-            <Link href="/portal/studio" className="text-xs text-zinc-400 hover:text-violet-500">
-              Or view full Creator Identity →
-            </Link>
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Step 5: Building ──────────────────────────────────────────────────────
-  if (step === 5) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#F7F7F5] px-4">
-        <div className="w-full max-w-sm text-center">
-          <div className="mb-8 flex h-20 w-20 mx-auto items-center justify-center rounded-3xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-200">
-            <Sparkles size={32} className="text-white animate-pulse" />
-          </div>
-          <h2 className="text-xl font-bold text-zinc-900">Creating your Creator Identity...</h2>
-          <p className="mt-2 text-sm text-zinc-500">This takes about 15 seconds</p>
-
-          <div className="mt-8 space-y-3 text-left">
-            {BUILDING_STEPS.map((s, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-all duration-500 ${
-                  buildingStep > i ? "bg-green-500" : buildingStep === i ? "bg-violet-200" : "bg-zinc-100"
-                }`}>
-                  {buildingStep > i
-                    ? <Check size={11} className="text-white" />
-                    : buildingStep === i
-                      ? <RefreshCw size={10} className="text-violet-500 animate-spin" />
-                      : null}
-                </div>
-                <span className={`text-sm transition-colors ${
-                  buildingStep > i ? "text-zinc-500 line-through" : buildingStep === i ? "font-medium text-zinc-900" : "text-zinc-300"
-                }`}>{s}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 h-1.5 rounded-full bg-zinc-200 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all duration-700"
-              style={{ width: `${(buildingStep / BUILDING_STEPS.length) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const socialCount = socials.filter(s => s.platformId && (s.oauthDone || s.profileUrl.trim())).length
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F7F7F5] px-4 py-12">
-      <div className="w-full max-w-sm">
+    <div className="flex h-screen overflow-hidden bg-[#F7F7F5]">
+      <PortalSidebar locked user={{ name: prefill.name, email: prefill.email, avatarUrl: prefill.avatarUrl }} />
 
-        {/* Progress bar */}
-        <div className="mb-8">
-          <div className="h-1 rounded-full bg-zinc-200 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-violet-500 transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
+      <main className="flex min-w-0 flex-1 flex-col">
+        {/* Header */}
+        <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-8 py-4">
+          <div>
+            <h1 className="text-lg font-bold text-zinc-900">Lengkapi profil kreatormu</h1>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Isi sekali. Tempel link sosialmu — kami yang verifikasi dan melengkapi datanya.
+            </p>
+          </div>
+          <span className="hidden rounded-full bg-zinc-100 px-3 py-1 text-[11px] font-medium text-zinc-500 lg:block">
+            {prefill.email}
+          </span>
+        </header>
+
+        {/* Body — the only scrollable region */}
+        <div className="flex-1 overflow-y-auto px-8 py-4">
+          {/* What happens after you submit */}
+          <div className="mx-auto mb-3 max-w-6xl">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-2.5 text-[11px] text-zinc-500">
+              <span className="mr-1 font-semibold text-violet-700">Setelah kamu kirim</span>
+              {STEPS.map((s, i) => (
+                <span key={s} className="flex items-center gap-2">
+                  {i > 0 && <ArrowRight size={11} className="text-violet-300" />}
+                  <span className="flex items-center gap-1.5">
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-violet-600 text-[9px] font-bold text-white">{i + 1}</span>
+                    {s}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mx-auto grid max-w-6xl gap-4 lg:grid-cols-3">
+
+            {/* Col 1 — Data diri: siapa kamu */}
+            <section className={`${CARD} space-y-3`}>
+              <p className={SECTION}>Data diri</p>
+
+              <div>
+                <label className={LABEL}>Nama / Display Name</label>
+                <p className={HINT}>Nama yang dilihat brand — boleh nama panggung.</p>
+                <input value={name} onChange={e => setName(e.target.value)} placeholder="cth. Nabnab" className={`mt-1 ${INPUT}`} />
+              </div>
+
+              <div>
+                <label className={LABEL}>WhatsApp</label>
+                <p className={HINT}>Nomor yang dapat dihubungi untuk campaign.</p>
+                <input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+62 8xx xxxx xxxx" inputMode="tel" className={`mt-1 ${INPUT}`} />
+              </div>
+
+              <div>
+                <label className={LABEL}>Email <span className="font-normal text-zinc-400">(dari akun Google)</span></label>
+                <input value={prefill.email} readOnly disabled className="mt-1 h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-400" />
+              </div>
+
+              <div>
+                <label className={LABEL}>Domisili <span className="font-normal text-zinc-400">(opsional)</span></label>
+                <div className="mt-1 grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <select
+                      value={province}
+                      onChange={e => setProvince(e.target.value)}
+                      className="h-10 w-full appearance-none rounded-xl border border-zinc-200 bg-white pl-3 pr-8 text-sm text-zinc-900 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 focus:outline-none"
+                    >
+                      <option value="">Provinsi</option>
+                      {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                    <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+                  </div>
+                  <input value={city} onChange={e => setCity(e.target.value)} placeholder="Kota" className={INPUT} />
+                </div>
+                <p className={`mt-1 ${HINT}`}>Digunakan untuk campaign yang membutuhkan lokasi.</p>
+              </div>
+            </section>
+
+            {/* Col 2 — Tipe & konten: kamu bikin apa */}
+            <section className={`${CARD} space-y-3`}>
+              <p className={SECTION}>Tipe &amp; konten</p>
+
+              <div>
+                <label className={LABEL}>Tipe talent</label>
+                <p className={`mb-2 mt-0.5 ${HINT}`}>Bisa pilih lebih dari satu.</p>
+                <div className="space-y-1">
+                  {TALENT_TYPES.map(t => {
+                    const on = talentTypes.includes(t.id)
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggleTalentType(t.id)}
+                        className={`flex w-full items-start gap-2 rounded-lg border px-2.5 py-1 text-left transition ${
+                          on ? "border-violet-400 bg-violet-50" : "border-zinc-200 bg-white hover:border-zinc-300"
+                        }`}
+                      >
+                        <span className={`mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border ${
+                          on ? "border-violet-500 bg-violet-500 text-white" : "border-zinc-300 bg-white"
+                        }`}>
+                          {on && <Check size={9} strokeWidth={3} />}
+                        </span>
+                        <span className="min-w-0">
+                          <span className={`block text-xs font-semibold ${on ? "text-violet-800" : "text-zinc-700"}`}>{t.label}</span>
+                          <span className="block text-[10px] leading-snug text-zinc-400">{t.desc}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className={LABEL}>Kategori konten</label>
+                <p className={`mb-2 mt-0.5 ${HINT}`}>
+                  Pilih hingga 5 ·{" "}
+                  <span className="font-semibold text-zinc-500">{categories.length}/5</span>
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {POPULAR_CATEGORIES.map(renderCategoryChip)}
+                  {/* Kategori terpilih tetap tampil walau panel tertutup */}
+                  {(showAllCats ? REST_CATEGORIES : REST_CATEGORIES.filter(c => categories.includes(c))).map(renderCategoryChip)}
+                  {REST_CATEGORIES.some(c => !categories.includes(c)) && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCats(v => !v)}
+                      className="inline-flex items-center gap-0.5 rounded-full border border-dashed border-zinc-300 px-2.5 py-1 text-[11px] font-medium text-zinc-500 transition hover:border-zinc-400 hover:text-zinc-700"
+                    >
+                      {showAllCats
+                        ? <>Sembunyikan <ChevronUp size={11} /></>
+                        : <>+ {REST_CATEGORIES.filter(c => !categories.includes(c)).length} lainnya <ChevronDown size={11} /></>}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+            </section>
+
+            {/* Col 3 — Akun sosial + status: di mana kamu aktif */}
+            <section className={`${CARD} space-y-3`}>
+              <p className={SECTION}>Akun sosial</p>
+
+              <div>
+                <label className={LABEL}>Hubungkan akun sosial</label>
+                <p className={`mb-2 mt-0.5 ${HINT}`}>
+                  Minimal 2 platform berbeda. Cukup tempel link profil — kami akan memverifikasi akun dan melengkapi data publikmu.
+                </p>
+                <div className="space-y-2">
+                  {socials.map((s, i) => (
+                    <div key={s.uid} className="flex items-center gap-1.5">
+                      {s.oauthDone && s.platformId === "tiktok" ? (
+                        // TikTok OAuth — connected state
+                        <>
+                          <div className="flex h-9 flex-1 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3">
+                            <Check size={12} className="shrink-0 text-emerald-500" />
+                            <span className="text-[11px] font-semibold text-emerald-700">TikTok</span>
+                            <span className="text-[11px] text-zinc-600">@{tiktokProfile?.username}</span>
+                            {(tiktokProfile?.followerCount ?? 0) > 0 && (
+                              <span className="text-[10px] text-zinc-400">{fmtNum(tiktokProfile!.followerCount)} followers</span>
+                            )}
+                          </div>
+                          {socials.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => removeSocial(i)}
+                              aria-label="Hapus akun"
+                              className="flex h-9 w-7 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        // Normal row
+                        <>
+                          <select
+                            value={s.platformId}
+                            onChange={e => updateSocial(i, { platformId: e.target.value, profileUrl: "" })}
+                            className="h-9 w-28 shrink-0 rounded-lg border border-zinc-200 bg-white px-2 text-xs text-zinc-900 focus:border-violet-400 focus:outline-none"
+                          >
+                            <option value="">Pilih platform</option>
+                            {platforms.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          </select>
+                          {s.platformId === "tiktok" ? (
+                            <button
+                              type="button"
+                              onClick={handleTikTokOAuth}
+                              className="h-9 flex-1 rounded-lg border border-zinc-900 bg-zinc-900 px-3 text-[11px] font-semibold text-white transition hover:bg-zinc-700"
+                            >
+                              Hubungkan via TikTok →
+                            </button>
+                          ) : (
+                            <input
+                              value={s.profileUrl}
+                              onChange={e => updateSocial(i, { profileUrl: e.target.value })}
+                              placeholder="Tempel link profil"
+                              inputMode="url"
+                              className="h-9 w-full min-w-0 rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 placeholder:text-zinc-300 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 focus:outline-none"
+                            />
+                          )}
+                          {socials.length > 2 && (
+                            <button type="button" onClick={() => removeSocial(i)} aria-label="Hapus akun" className="flex h-9 w-7 shrink-0 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
+                              <X size={14} />
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  {socials.length < MAX_SOCIALS ? (
+                    <button type="button" onClick={addSocial} className="inline-flex items-center gap-1 text-[11px] font-medium text-violet-600 hover:text-violet-700">
+                      <Plus size={12} /> Tambah akun
+                    </button>
+                  ) : <span />}
+                  {socialCount >= 2 ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+                      <Check size={12} /> {socialCount} akun ditambahkan
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-medium text-zinc-400">{socialCount}/2 akun</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-zinc-100 pt-3">
+                <label className={LABEL}>Tentang kamu <span className="font-normal text-zinc-400">(opsional)</span></label>
+                <p className={HINT}>Sedikit konteks tentang konten atau positioning-mu.</p>
+                <textarea
+                  value={bio}
+                  onChange={e => setBio(e.target.value.slice(0, BIO_MAX))}
+                  rows={3}
+                  placeholder="Beauty creator, fokus honest review & makeup tutorial..."
+                  className="mt-1.5 w-full resize-none rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-300 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 focus:outline-none"
+                />
+                <p className={`mt-0.5 text-right ${HINT}`}>{bio.length}/{BIO_MAX}</p>
+              </div>
+            </section>
           </div>
         </div>
 
-        {/* ── Step 1: Platform ───────────────────────────────────────────── */}
-        {step === 1 && (
-          <div className="space-y-6">
-            {/* Profile from Google */}
-            <div className="flex items-center gap-3 rounded-2xl border border-zinc-200/60 bg-white p-4">
-              {prefill.avatarUrl ? (
-                <img src={prefill.avatarUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
-              ) : (
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-600">
-                  {prefill.name[0]?.toUpperCase()}
-                </div>
-              )}
-              <div>
-                <p className="text-sm font-semibold text-zinc-900">{prefill.name || "Creator"}</p>
-                <p className="text-xs text-zinc-400">{prefill.email}</p>
-              </div>
-              <div className="ml-auto rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-600">
-                Google ✓
-              </div>
+        {/* Sticky footer — consent + submit always visible */}
+        <footer className="border-t border-zinc-200 bg-white px-8 py-3">
+          {(error || fieldError) && (
+            <div className="mx-auto mb-2 flex max-w-6xl items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
+              <AlertCircle size={14} className="shrink-0" />
+              {fieldError ?? error}
             </div>
-
-            <div>
-              <h1 className="text-xl font-bold text-zinc-900">Where do you create?</h1>
-              <p className="mt-1 text-sm text-zinc-500">Pick your primary platform</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {PLATFORMS.map((p) => (
-                <button
-                  key={p.value}
-                  onClick={() => { setPlatform(p.value); setStep(2) }}
-                  className="flex flex-col items-center gap-2 rounded-2xl border-2 border-zinc-200 bg-white p-5 text-sm font-medium text-zinc-700 transition hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700 active:scale-95"
-                >
-                  <span className="text-3xl">{p.emoji}</span>
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Step 2: Username ───────────────────────────────────────────── */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <button onClick={() => setStep(1)} className="text-xs text-zinc-400 hover:text-zinc-600">← Back</button>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-violet-500">
-                {PLATFORMS.find((p) => p.value === platform)?.emoji} {PLATFORMS.find((p) => p.value === platform)?.label}
-              </p>
-              <h1 className="mt-1 text-xl font-bold text-zinc-900">What&apos;s your handle?</h1>
-              <p className="mt-1 text-sm text-zinc-500">The username brands will see</p>
-            </div>
-
-            <div className="flex items-center rounded-2xl border-2 border-zinc-200 bg-white px-4 focus-within:border-violet-400">
-              <span className="text-lg text-zinc-400">@</span>
+          )}
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+            <label className="flex items-start gap-2 text-[11px] leading-snug text-zinc-500">
               <input
-                autoFocus
-                value={username}
-                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ""))}
-                placeholder="yourhandle"
-                className="flex-1 py-4 pl-2 text-base font-medium text-zinc-900 placeholder:text-zinc-300 focus:outline-none bg-transparent"
+                type="checkbox"
+                checked={agreeTos}
+                onChange={e => setAgreeTos(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-zinc-300 accent-violet-600"
               />
-            </div>
-            {fieldError && <p className="text-xs text-red-500">{fieldError}</p>}
+              <span className="max-w-md">
+                Saya menyetujui{" "}
+                <Link href="/terms" target="_blank" className="font-medium text-violet-600 underline underline-offset-2">Syarat &amp; Ketentuan</Link>
+                {" "}&amp;{" "}
+                <Link href="/privacy" target="_blank" className="font-medium text-violet-600 underline underline-offset-2">Kebijakan Privasi</Link>.
+              </span>
+            </label>
 
             <button
-              onClick={() => {
-                if (!username.trim()) { setFieldError("Username wajib diisi"); return }
-                setFieldError(null)
-                setStep(3)
-              }}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 py-3.5 text-sm font-semibold text-white transition hover:bg-violet-700 active:scale-95"
+              onClick={handleSubmit}
+              disabled={loading || !agreeTos}
+              className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:opacity-90 active:scale-95 disabled:opacity-50 disabled:hover:opacity-50"
             >
-              Continue <ChevronRight size={15} />
+              {loading ? <Loader2 size={15} className="animate-spin" /> : null}
+              {loading ? "Mengirim..." : "Kirim Profil untuk Verifikasi"}
+              {!loading && <ArrowRight size={16} />}
             </button>
           </div>
-        )}
-
-        {/* ── Step 3: Audience tier ──────────────────────────────────────── */}
-        {step === 3 && (
-          <div className="space-y-6">
-            <button onClick={() => setStep(2)} className="text-xs text-zinc-400 hover:text-zinc-600">← Back</button>
-            <div>
-              <h1 className="text-xl font-bold text-zinc-900">How big is your following?</h1>
-              <p className="mt-1 text-sm text-zinc-500">Approximate is fine</p>
-            </div>
-
-            <div className="space-y-2.5">
-              {TIERS.map((t) => (
-                <button
-                  key={t.value}
-                  onClick={() => { setTier(t.value); setStep(4) }}
-                  className="flex w-full items-center gap-4 rounded-2xl border-2 border-zinc-200 bg-white p-4 text-left transition hover:border-violet-400 hover:bg-violet-50 active:scale-[0.98]"
-                >
-                  <span className="text-2xl">{t.emoji}</span>
-                  <div>
-                    <p className="font-semibold text-zinc-900">{t.label}</p>
-                    <p className="text-xs text-zinc-400">{t.range}</p>
-                  </div>
-                  <ChevronRight size={14} className="ml-auto text-zinc-300" />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Step 4: Niche + City + Contact ─────────────────────────────── */}
-        {step === 4 && (
-          <div className="space-y-5">
-            <button onClick={() => setStep(3)} className="text-xs text-zinc-400 hover:text-zinc-600">← Back</button>
-            <div>
-              <h1 className="text-xl font-bold text-zinc-900">Almost there.</h1>
-              <p className="mt-1 text-sm text-zinc-500">Help AI understand your content</p>
-            </div>
-
-            {error && (
-              <p className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-600">{error}</p>
-            )}
-
-            {/* Niche tags */}
-            <div>
-              <p className="mb-2.5 text-xs font-semibold text-zinc-500">What do you create?</p>
-              <div className="flex flex-wrap gap-2">
-                {NICHES.map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    onClick={() => toggleNiche(n)}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                      niches.includes(n)
-                        ? "border-violet-400 bg-violet-50 text-violet-700"
-                        : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300"
-                    }`}
-                  >
-                    {niches.includes(n) && "✓ "}{n}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* City */}
-            <div>
-              <p className="mb-1.5 text-xs font-semibold text-zinc-500">Based in</p>
-              <input
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="Jakarta, Surabaya, Bandung..."
-                className="h-11 w-full rounded-2xl border-2 border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:border-violet-400 focus:outline-none"
-              />
-            </div>
-
-            {/* Contact */}
-            <div>
-              <p className="mb-1.5 text-xs font-semibold text-zinc-500">How can brands reach you?</p>
-              <input
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                placeholder="WhatsApp atau email"
-                className="h-11 w-full rounded-2xl border-2 border-zinc-200 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-300 focus:border-violet-400 focus:outline-none"
-              />
-            </div>
-
-            {fieldError && <p className="text-xs text-red-500">{fieldError}</p>}
-
-            <button
-              onClick={handleBuild}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-purple-600 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 transition hover:opacity-90 active:scale-95"
-            >
-              <Sparkles size={15} />
-              Build My Creator Identity
-            </button>
-          </div>
-        )}
-
-      </div>
+        </footer>
+      </main>
     </div>
   )
 }

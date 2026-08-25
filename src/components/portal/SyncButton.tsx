@@ -1,15 +1,16 @@
 "use client"
 import { useState } from "react"
 import { RefreshCw } from "lucide-react"
-import { resyncTikTokAction } from "@/modules/creator/actions/resync-tiktok"
+import { resyncSocialAccountAction } from "@/modules/creator/actions/resync-tiktok"
 import { useRouter } from "next/navigation"
 import { timeAgo } from "@/lib/format"
 
 interface Props {
+  accountId:  string
   lastSyncAt: Date | null
 }
 
-export function SyncButton({ lastSyncAt }: Props) {
+export function SyncButton({ accountId, lastSyncAt }: Props) {
   const router = useRouter()
   const [loading,  setLoading]  = useState(false)
   const [feedback, setFeedback] = useState<{ type: "ok" | "err"; msg: string } | null>(null)
@@ -18,7 +19,7 @@ export function SyncButton({ lastSyncAt }: Props) {
     setLoading(true)
     setFeedback(null)
 
-    const result = await resyncTikTokAction()
+    const result = await resyncSocialAccountAction(accountId)
 
     if (!result.success) {
       setFeedback({ type: "err", msg: result.error })
@@ -26,11 +27,8 @@ export function SyncButton({ lastSyncAt }: Props) {
       return
     }
 
-    const parts: string[] = []
-    if (result.newVideos > 0) parts.push(`${result.newVideos} video baru`)
-    else parts.push("Data terbaru")
+    const parts: string[] = ["Data terbaru"]
     if (result.followerDiff > 0) parts.push(`+${result.followerDiff} followers`)
-    if (result.aiUpdated)        parts.push("AI diperbarui")
     setFeedback({ type: "ok", msg: `✓ ${parts.join(" · ")}` })
 
     setLoading(false)

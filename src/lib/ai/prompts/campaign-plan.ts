@@ -8,10 +8,10 @@ type CampaignPlanInput = {
 
 type CreatorRow = {
   name:           string
-  username:       string
-  niche:          string
-  followerCount:  number
-  engagementRate: number | string
+  username:       string | null
+  niche:          string | null
+  followerCount:  number | null
+  engagementRate: number | string | null
 }
 
 export function buildCampaignPlanPrompt(input: CampaignPlanInput): string {
@@ -48,7 +48,7 @@ export function buildCreatorMatchPrompt(product: string, target: string, creator
   return `Kamu adalah analis KOL marketing. Untuk campaign "${product}" yang menargetkan "${target}", berikan match score (0-100) dan alasan singkat (max 12 kata) untuk setiap creator.
 
 Creators:
-${creators.map((c, i) => `${i + 1}. ${c.name} (@${c.username}) - ${c.niche}, ${c.followerCount} follower, ER ${c.engagementRate}%`).join("\n")}
+${creators.map((c, i) => `${i + 1}. ${c.name} (@${c.username ?? "unknown"}) - ${c.niche ?? "general"}, ${c.followerCount ?? 0} follower, ER ${c.engagementRate ?? 0}%`).join("\n")}
 
 Return JSON array ONLY:
 [{"score": 95, "reason": "alasan singkat max 12 kata"}, ...]`

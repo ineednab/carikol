@@ -11,24 +11,23 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
-      let dbUser = await prisma.user.findUnique({
-        where: { email: data.user.email! },
-      })
+      const email = data.user.email!
+      const fullName = data.user.user_metadata?.full_name ?? email.split("@")[0]
 
+      // Provision the talent User only. The Creator profile is created during
+      // onboarding (onboardingAction) — that keeps `creatorId` an honest
+      // "onboarding complete" signal for the portal redirect guards below.
+      let dbUser = await prisma.user.findUnique({ where: { email } })
       if (!dbUser) {
         dbUser = await prisma.user.create({
-          data: {
-            email: data.user.email!,
-            name: data.user.user_metadata?.full_name ?? data.user.email!.split("@")[0],
-            role: "talent",
-          },
+          data: { email, name: fullName, role: "talent" },
         })
       }
 
       if (dbUser.role !== "talent") {
         return NextResponse.redirect(`${origin}/dashboard`)
       }
-      // New talent without creator profile → onboarding
+      // Onboarding not finished until a Creator profile is linked.
       const destination = dbUser.creatorId ? "/portal" : "/portal/onboarding"
       return NextResponse.redirect(`${origin}${destination}`)
     }

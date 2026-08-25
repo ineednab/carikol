@@ -30,7 +30,16 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
+  const { pathname, searchParams } = request.nextUrl
+
+  // OAuth resilience: Supabase falls back to the Site URL ("/") when our
+  // `redirectTo` (/auth/callback) isn't in its Redirect URLs allowlist. Forward
+  // any stray OAuth code to the callback handler so login still completes.
+  if (pathname === "/" && searchParams.has("code")) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/callback"
+    return NextResponse.redirect(url)
+  }
 
   const isPublic =
     pathname === "/" ||
@@ -40,14 +49,15 @@ export async function proxy(request: NextRequest) {
     pathname === "/terms" ||
     pathname === "/privacy" ||
     pathname.startsWith("/auth") ||
-    pathname.startsWith("/k/")
+    pathname.startsWith("/k/") ||
+    pathname.startsWith("/cek")
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
   if (user && pathname === "/login") {
-    return NextResponse.redirect(new URL("/portal", request.url))
+    return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
   return supabaseResponse

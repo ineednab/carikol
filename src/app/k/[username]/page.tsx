@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { MediaKitView } from "./_components/MediaKitView"
-import type { AIStudioResult } from "@/modules/creator/actions/generate-ai-studio"
 import type { Metadata } from "next"
 
 interface Props {
@@ -10,46 +9,61 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params
-  const creator = await prisma.creator.findUnique({ where: { username } })
+  // username param is now treated as the creator ID or social account username
+  const socialAccount = await prisma.socialAccount.findFirst({
+    where:   { username },
+    include: { creator: true },
+  })
+  const creator = socialAccount?.creator
+    ?? await prisma.creator.findFirst({ where: { id: username } })
   if (!creator) return { title: "Creator not found — CariKOL" }
   return {
-    title: `${creator.name} (@${creator.username}) — Media Kit CariKOL`,
-    description: creator.notes ?? `Creator ${creator.niche} di ${creator.platform}`,
+    title: `${creator.name} — Media Kit CariKOL`,
+    description: `Creator dari ${creator.city ?? "Indonesia"}`,
   }
 }
 
 export default async function MediaKitPage({ params }: Props) {
   const { username } = await params
-  const creator = await prisma.creator.findUnique({ where: { username } })
+
+  const socialAccount = await prisma.socialAccount.findFirst({
+    where:   { username },
+    include: {
+      creator: {
+        include: {
+          categories:    true,
+          socialAccounts: { include: { platform: true, snapshots: { orderBy: { capturedAt: "desc" }, take: 1 } } },
+        },
+      },
+    },
+  })
+
+  const creator = socialAccount?.creator
+    ?? await prisma.creator.findFirst({
+      where: { id: username },
+      include: {
+        categories:    true,
+        socialAccounts: { include: { platform: true, snapshots: { orderBy: { capturedAt: "desc" }, take: 1 } } },
+      },
+    })
+
   if (!creator) notFound()
 
-  const studioData = creator.aiInsight
-    ? (() => {
-        try {
-          const parsed = JSON.parse(creator.aiInsight!) as AIStudioResult
-          if (!parsed?.facts?.activity || !parsed?.ai?.observations) return null
-          return parsed
-        } catch { return null }
-      })()
-    : null
+  const primaryAccount = creator.socialAccounts[0] ?? null
+  const latestSnap     = primaryAccount?.snapshots[0] ?? null
 
   return (
     <MediaKitView
       creator={{
-        name: creator.name,
-        username: creator.username,
-        platform: creator.platform,
-        niche: creator.niche,
-        tier: creator.tier,
-        followerCount: creator.followerCount,
-        engagementRate: Number(creator.engagementRate),
-        city: creator.city ?? null,
-        bio: creator.notes ?? null,
-        contact: creator.contact,
-        typicalRateMin: creator.typicalRateMin ?? null,
-        typicalRateMax: creator.typicalRateMax ?? null,
+        name:           creator.name,
+        categories:     creator.categories.map(c => c.category),
+        city:           creator.city ?? null,
+        contact:        creator.contact,
+        platform:       primaryAccount?.platform.name ?? null,
+        username:       primaryAccount?.username ?? null,
+        followerCount:  latestSnap?.followerCount ?? null,
+        engagementRate: latestSnap?.engagementRate != null ? Number(latestSnap.engagementRate) : null,
       }}
-      studioData={studioData}
     />
   )
 }

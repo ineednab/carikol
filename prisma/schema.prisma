@@ -1,6 +1,5 @@
-// CariKOL — Prisma Schema
-// Bounded contexts: Campaign, Creator, Brand, Auth
-// Decision records are append-only — no UPDATE permitted via service layer
+// CariKOL — Prisma Schema v2
+// Rebuilt clean. No old Decision/Assignment/TikTokAccount models.
 
 generator client {
   provider = "prisma-client-js"
@@ -12,9 +11,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ─────────────────────────────────────────────
-// Bounded Context: Auth
-// ─────────────────────────────────────────────
+// ─── Auth ────────────────────────────────────────────────────────────────────
 
 model User {
   id        String   @id @default(uuid())
@@ -26,11 +23,11 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  creator           Creator?        @relation("UserCreatorAccount", fields: [creatorId], references: [id])
-  campaignsCreated  Campaign[]      @relation("CampaignCreatedBy")
-  decisionsRecorded Decision[]      @relation("DecisionRecordedBy")
+  creator           Creator?       @relation("UserCreatorAccount", fields: [creatorId], references: [id])
+  campaignsCreated  Campaign[]     @relation("CampaignCreatedBy")
+  brandsManaged     Brand[]        @relation("BrandAccountManager")
   outcomesCompleted OutcomeReview[] @relation("OutcomeCompletedBy")
-  brandsManaged     Brand[]         @relation("BrandAccountManager")
+  internalNotes     InternalNote[] @relation("NoteAuthor")
   auditLogs         AuditLog[]
 
   @@map("user")
@@ -45,9 +42,7 @@ enum UserRole {
   @@map("user_role")
 }
 
-// ─────────────────────────────────────────────
-// Bounded Context: Brand
-// ─────────────────────────────────────────────
+// ─── Brand ───────────────────────────────────────────────────────────────────
 
 model Brand {
   id               String    @id @default(uuid())
@@ -58,124 +53,203 @@ model Brand {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  accountManager   User?     @relation("BrandAccountManager", fields: [accountManagerId], references: [id])
-  campaigns        Campaign[]
+  accountManager User?      @relation("BrandAccountManager", fields: [accountManagerId], references: [id])
+  campaigns      Campaign[]
 
   @@map("brand")
 }
 
-// ─────────────────────────────────────────────
-// Bounded Context: Creator
-// ─────────────────────────────────────────────
+// ─── Platform ────────────────────────────────────────────────────────────────
 
-model Creator {
-  id               String          @id @default(uuid())
-  name             String
-  username         String          @unique
-  city             String?
-  platform         Platform
-  niche            String
-  tier             CreatorTier
-  followerCount    Int             @map("follower_count")
-  engagementRate   Decimal         @map("engagement_rate") @db.Decimal(5, 2)
-  typicalRateMin   Int?            @map("typical_rate_min")
-  typicalRateMax   Int?            @map("typical_rate_max")
-  contact          String
-  isActive         Boolean         @default(true) @map("is_active")
-  notes            String?
-  aiInsight        String?         @map("ai_insight")
-  rateCardJson     Json?           @map("rate_card_json")
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
+model Platform {
+  id               String  @id
+  name             String  @unique
+  supportsAutoSync Boolean @default(false) @map("supports_auto_sync")
+  supportsLogin    Boolean @default(false) @map("supports_login")
+  supportsSnapshot Boolean @default(true)  @map("supports_snapshot")
 
-  userAccount      User?             @relation("UserCreatorAccount")
-  decisions        Decision[]
-  outcomeReviews   OutcomeReview[]
-  tiktokAccount    TikTokAccount?
-  snapshots        CreatorSnapshot[]
-
-  @@index([platform, niche, tier])
-  @@index([isActive])
-  @@map("creator")
-}
-
-model CreatorSnapshot {
-  id            String   @id @default(uuid()) @db.Uuid
-  creatorId     String   @map("creator_id") @db.Uuid
-  snapshotAt    DateTime @default(now()) @map("snapshot_at")
-  followerCount Int      @map("follower_count")
-  avgViews      Int      @default(0) @map("avg_views")
-  avgEngagement Decimal  @default(0) @map("avg_engagement") @db.Decimal(5, 2)
-  videos90d     Int      @default(0) @map("videos90d")
-
-  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-
-  @@index([creatorId, snapshotAt])
-  @@map("creator_snapshot")
-}
-
-model TikTokAccount {
-  id             String    @id @default(uuid()) @db.Uuid
-  creatorId      String    @unique @map("creator_id") @db.Uuid
-  openId         String    @unique @map("open_id")
-  accessToken    String    @map("access_token")
-  refreshToken   String?   @map("refresh_token")
-  expiresAt      DateTime  @map("expires_at")
-  username       String?
-  displayName    String?   @map("display_name")
-  avatarUrl      String?   @map("avatar_url")
-  bio            String?
-  followerCount  Int       @default(0) @map("follower_count")
-  followingCount Int       @default(0) @map("following_count")
-  likesCount     Int       @default(0) @map("likes_count")
-  videoCount     Int       @default(0) @map("video_count")
-  videosJson     Json?     @map("videos_json")
-  connectedAt    DateTime  @default(now()) @map("connected_at")
-  lastSyncAt     DateTime? @map("last_sync_at")
-
-  creator        Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-
-  @@map("tiktok_account")
-}
-
-enum Platform {
-  tiktok
-  instagram
-  youtube
-  other
+  socialAccounts SocialAccount[]
 
   @@map("platform")
 }
 
-enum CreatorTier {
-  nano
-  micro
-  macro
-  mega
+// ─── Creator ─────────────────────────────────────────────────────────────────
 
-  @@map("creator_tier")
+model Creator {
+  id            String   @id @default(uuid())
+  name          String
+  province      String?
+  city          String?
+  contact       String
+  isActive      Boolean  @default(true) @map("is_active")
+  acceptsBarter Boolean  @default(true) @map("accepts_barter")
+  minimumFee    Decimal? @db.Decimal(15, 0) @map("minimum_fee")
+  feeNotes      String?  @map("fee_notes")
+  bio           String?
+  talentTypes   TalentType[]       @map("talent_types")
+  availability  AvailabilityStatus @default(OPEN)
+  tosAcceptedAt DateTime?          @map("tos_accepted_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  userAccount    User?             @relation("UserCreatorAccount")
+  categories     CreatorCategory[]
+  socialAccounts SocialAccount[]
+  applications   Application[]
+  outcomeReviews OutcomeReview[]
+  internalNotes  InternalNote[]
+  deliverables   Deliverable[]
+
+  @@map("creator")
 }
 
-// ─────────────────────────────────────────────
-// Bounded Context: Campaign
-// ─────────────────────────────────────────────
+model CreatorCategory {
+  creatorId String @map("creator_id")
+  category  String
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@id([creatorId, category])
+  @@index([category])
+  @@map("creator_category")
+}
+
+model SocialAccount {
+  id          String    @id @default(uuid())
+  creatorId   String    @map("creator_id")
+  platformId  String    @map("platform_id")
+  username    String
+  displayName String?   @map("display_name")
+  profileUrl  String?   @map("profile_url")
+  avatarUrl   String?   @map("avatar_url")
+  syncType    SyncType  @default(NONE) @map("sync_type")
+  status       SocialAccountStatus @default(PENDING_REVIEW)
+  reviewNote   String?   @map("review_note")
+  verifiedById String?   @map("verified_by")
+  verifiedAt   DateTime? @map("verified_at")
+  connectedAt DateTime? @map("connected_at")
+  lastSyncAt  DateTime? @map("last_sync_at")
+  nextSyncAt  DateTime? @map("next_sync_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  creator   Creator         @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  platform  Platform        @relation(fields: [platformId], references: [id])
+  snapshots SocialSnapshot[]
+  authToken SocialAuthToken?
+
+  @@unique([creatorId, platformId])
+  @@index([nextSyncAt])
+  @@map("social_account")
+}
+
+model SocialAuthToken {
+  id               String   @id @default(uuid())
+  socialAccountId  String   @unique @map("social_account_id")
+  provider         String
+  providerUserId   String?  @map("provider_user_id")
+  accessTokenEnc   String   @map("access_token_enc")
+  scope            String?
+  tokenExpiresAt   DateTime? @map("token_expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@index([provider, tokenExpiresAt])
+  @@map("social_auth_token")
+}
+
+enum SyncType {
+  AUTO
+  MANUAL
+  NONE
+
+  @@map("sync_type")
+}
+
+enum SocialAccountStatus {
+  PENDING_REVIEW // talent submit link, nunggu admin
+  VERIFIED       // admin sudah scrape & konfirmasi
+  REJECTED       // link salah/private/bukan punya dia
+
+  @@map("social_account_status")
+}
+
+enum TalentType {
+  CREATOR   // Creator / Influencer
+  UGC       // UGC Creator
+  KOL       // Key Opinion Leader
+  AFFILIATE // Affiliate Creator
+  TALENT    // Talent / Personality
+  OTHER
+
+  @@map("talent_type")
+}
+
+enum AvailabilityStatus {
+  OPEN    // aktif menerima job
+  LIMITED // terbatas
+  CLOSED  // tidak menerima
+
+  @@map("availability_status")
+}
+
+model SocialSnapshot {
+  id             String     @id @default(uuid())
+  accountId      String     @map("account_id")
+  followerCount  Int        @map("follower_count")
+  followingCount Int?       @map("following_count")
+  postCount      Int?       @map("post_count")
+  engagementRate Decimal?   @map("engagement_rate") @db.Decimal(5, 2)
+  capturedAt     DateTime   @default(now()) @map("captured_at")
+  capturedBy     CapturedBy @map("captured_by")
+  rawJson        Json?      @map("raw_json")
+
+  account SocialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, capturedAt])
+  @@map("social_snapshot")
+}
+
+enum CapturedBy {
+  AUTO
+  MANUAL
+
+  @@map("captured_by")
+}
+
+// ─── Campaign ─────────────────────────────────────────────────────────────────
 
 model Campaign {
-  id          String         @id @default(uuid())
-  name        String
-  brandId     String         @map("brand_id")
-  status      CampaignStatus @default(draft)
-  createdById String         @map("created_by")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  closedAt    DateTime?      @map("closed_at")
+  id           String         @id @default(uuid())
+  name         String
+  brandId      String         @map("brand_id")
+  type         CampaignType
+  rewardAmount Int?           @map("reward_amount")
+  status       CampaignStatus @default(draft)
+  createdById  String         @map("created_by")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  closedAt     DateTime?      @map("closed_at")
+  publicSlug   String?        @unique @map("public_slug")
+  rateMode     String?        @map("rate_mode")
+  targetViews  Int?           @map("target_views")
+  isDemo       Boolean        @default(false) @map("is_demo")
 
-  brand       Brand          @relation(fields: [brandId], references: [id])
-  createdBy   User           @relation("CampaignCreatedBy", fields: [createdById], references: [id])
-  brief       Brief?
-  decisions   Decision[]
-  outcomes    OutcomeReview[]
+  brand        Brand          @relation(fields: [brandId], references: [id])
+  createdBy    User           @relation("CampaignCreatedBy", fields: [createdById], references: [id])
+  brief        Brief?
+  applications Application[]
+  outcomes     OutcomeReview[]
+  deliverables Deliverable[]
 
   @@map("campaign")
+}
+
+enum CampaignType {
+  PAID
+  BARTER
+
+  @@map("campaign_type")
 }
 
 enum CampaignStatus {
@@ -188,113 +262,77 @@ enum CampaignStatus {
 }
 
 model Brief {
-  id                  String    @id @default(uuid())
-  campaignId          String    @unique @map("campaign_id")
-  platform            Platform
+  id                  String   @id @default(uuid())
+  campaignId          String   @unique @map("campaign_id")
+  platforms           String
   objective           String
-  creatorCriteria     String    @map("creator_criteria")
-  budgetMin           Int       @map("budget_min")
-  budgetMax           Int       @map("budget_max")
+  creatorCriteria     String   @map("creator_criteria")
+  budgetMin           Int      @map("budget_min")
+  budgetMax           Int      @map("budget_max")
   deliverables        String
-  startDate           DateTime  @map("start_date") @db.Date
-  contentDeadline     DateTime  @map("content_deadline") @db.Date
-  postingDate         DateTime  @map("posting_date") @db.Date
-  specialRequirements String?   @map("special_requirements")
-  createdAt           DateTime  @default(now()) @map("created_at")
+  startDate           DateTime @map("start_date") @db.Date
+  contentDeadline     DateTime @map("content_deadline") @db.Date
+  postingDate         DateTime @map("posting_date") @db.Date
+  specialRequirements String?  @map("special_requirements")
+  createdAt           DateTime @default(now()) @map("created_at")
 
-  campaign            Campaign  @relation(fields: [campaignId], references: [id])
+  campaign Campaign @relation(fields: [campaignId], references: [id])
 
   @@map("brief")
 }
 
-// append-only — no UPDATE via service layer
-model Decision {
-  id            String         @id @default(uuid())
-  campaignId    String         @map("campaign_id")
-  creatorId     String         @map("creator_id")
-  type          DecisionType
-  owner         DecisionOwner
-  confidence    Confidence
-  confirmedRate Int?           @map("confirmed_rate")
-  notes         String?
-  recordedById  String         @map("recorded_by")
-  decidedAt     DateTime       @map("decided_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  supersedesId  String?        @unique @map("supersedes_id")
+// ─── Application ─────────────────────────────────────────────────────────────
 
-  campaign      Campaign       @relation(fields: [campaignId], references: [id])
-  creator       Creator        @relation(fields: [creatorId], references: [id])
-  recordedBy    User           @relation("DecisionRecordedBy", fields: [recordedById], references: [id])
-  supersedes    Decision?      @relation("DecisionSupersedes", fields: [supersedesId], references: [id])
-  supersededBy  Decision?      @relation("DecisionSupersedes")
-  reason        DecisionReason?
+model Application {
+  id         String            @id @default(uuid())
+  campaignId String            @map("campaign_id")
+  creatorId  String            @map("creator_id")
+  status     ApplicationStatus @default(APPLIED)
+  appliedAt  DateTime          @default(now()) @map("applied_at")
+  reviewedAt DateTime?         @map("reviewed_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
 
-  @@index([campaignId, creatorId])
-  @@index([creatorId, type])
-  @@index([campaignId, type])
-  @@map("decision")
+  campaign Campaign       @relation(fields: [campaignId], references: [id])
+  creator  Creator        @relation(fields: [creatorId], references: [id])
+  outcome  OutcomeReview?
+
+  @@unique([campaignId, creatorId])
+  @@index([campaignId, status])
+  @@index([creatorId])
+  @@map("application")
 }
 
-enum DecisionType {
-  creator_proposed
-  internal_approved
-  internal_rejected
-  client_approved
-  client_rejected
-  creator_confirmed
-  creator_declined
-  creator_no_response
-  creator_budget_rejected
-  creator_unavailable
+enum ApplicationStatus {
+  APPLIED
+  SELECTED
+  REJECTED
+  CONTENT_SUBMITTED
+  CONTENT_APPROVED
+  COMPLETED
 
-  @@map("decision_type")
-}
-
-enum DecisionOwner {
-  campaign_manager
-  client
-  creator
-  system
-
-  @@map("decision_owner")
-}
-
-enum Confidence {
-  explicit
-  inferred
-
-  @@map("confidence")
-}
-
-model DecisionReason {
-  id         String   @id @default(uuid())
-  decisionId String   @unique @map("decision_id")
-  category   String
-  freeText   String?  @map("free_text")
-
-  decision   Decision @relation(fields: [decisionId], references: [id])
-
-  @@map("decision_reason")
+  @@map("application_status")
 }
 
 model OutcomeReview {
-  id             String          @id @default(uuid())
-  campaignId     String          @map("campaign_id")
-  creatorId      String          @map("creator_id")
-  contentQuality Int             @map("content_quality") @db.SmallInt
-  communication  Int             @db.SmallInt
+  id              String         @id @default(uuid())
+  applicationId   String         @unique @map("application_id")
+  campaignId      String         @map("campaign_id")
+  creatorId       String         @map("creator_id")
+  contentQuality  Int            @map("content_quality") @db.SmallInt
+  communication   Int            @db.SmallInt
   professionalism Int            @db.SmallInt
-  wouldWorkAgain WouldWorkAgain  @map("would_work_again")
-  notes          String?
-  completedById  String          @map("completed_by")
-  completedAt    DateTime        @map("completed_at")
+  wouldWorkAgain  WouldWorkAgain @map("would_work_again")
+  notes           String?
+  completedById   String         @map("completed_by")
+  completedAt     DateTime       @map("completed_at")
 
-  campaign       Campaign        @relation(fields: [campaignId], references: [id])
-  creator        Creator         @relation(fields: [creatorId], references: [id])
-  completedBy    User            @relation("OutcomeCompletedBy", fields: [completedById], references: [id])
+  application Application @relation(fields: [applicationId], references: [id])
+  campaign    Campaign     @relation(fields: [campaignId], references: [id])
+  creator     Creator      @relation(fields: [creatorId], references: [id])
+  completedBy User         @relation("OutcomeCompletedBy", fields: [completedById], references: [id])
 
-  @@unique([campaignId, creatorId])
   @@index([creatorId])
+  @@index([campaignId])
   @@map("outcome_review")
 }
 
@@ -306,9 +344,99 @@ enum WouldWorkAgain {
   @@map("would_work_again")
 }
 
-// ─────────────────────────────────────────────
-// Infrastructure: Audit Log (no UI in MVP)
-// ─────────────────────────────────────────────
+// ─── Deliverable ─────────────────────────────────────────────────────────────
+// Execution layer: konten yang benar-benar tayang per creator per campaign.
+// Beda dari OutcomeReview (kualitatif) — ini data faktual: URL, metrics, proof.
+
+model Deliverable {
+  id              String              @id @default(uuid())
+  campaignId      String              @map("campaign_id")
+  creatorId       String?             @map("creator_id")
+  creatorName     String?             @map("creator_name")
+  creatorHandle   String?             @map("creator_handle")
+  creatorCategory String?             @map("creator_category")
+  platform        DeliverablePlatform
+  postUrl         String?             @map("post_url")
+  uploadDate      DateTime?           @map("upload_date") @db.Date
+  proofScreenshot String?             @map("proof_screenshot")
+  views           Int?
+  likes           Int?
+  comments        Int?
+  shares          Int?
+  status          DeliverableStatus   @default(PENDING)
+  creatorRate     Int?                @map("creator_rate")
+  createdAt       DateTime            @default(now()) @map("created_at")
+
+  campaign Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creator  Creator?  @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+
+  @@index([campaignId])
+  @@index([creatorId])
+  @@map("deliverable")
+}
+
+enum DeliverablePlatform {
+  tiktok
+  instagram_reels
+  instagram_feed
+  youtube_shorts
+  youtube
+  threads
+  twitter_x
+
+  @@map("deliverable_platform")
+}
+
+enum DeliverableStatus {
+  PENDING
+  APPROVED
+  NEEDS_REVISION
+
+  @@map("deliverable_status")
+}
+
+// ─── Internal Notes (append-only) ────────────────────────────────────────────
+
+model InternalNote {
+  id         String         @id @default(uuid())
+  creatorId  String         @map("creator_id")
+  content    String
+  authorId   String         @map("author_id")
+  visibility NoteVisibility @default(TEAM)
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  creator Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  author  User    @relation("NoteAuthor", fields: [authorId], references: [id])
+
+  @@index([creatorId, createdAt])
+  @@map("internal_note")
+}
+
+enum NoteVisibility {
+  PRIVATE
+  TEAM
+
+  @@map("note_visibility")
+}
+
+// ─── Waitlist (preserve) ─────────────────────────────────────────────────────
+
+model Waitlist {
+  id          String    @id @default(uuid()) @db.Uuid
+  email       String    @unique
+  type        String
+  pain        String?
+  workflow    String?
+  demographic String?
+  wish        String?
+  answers     Json?
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@map("waitlist")
+}
+
+// ─── Audit Log ───────────────────────────────────────────────────────────────
 
 model AuditLog {
   id         String   @id @default(uuid())
@@ -319,7 +447,7 @@ model AuditLog {
   userId     String?  @map("user_id")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  user       User?    @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 
   @@index([entityType, entityId])
   @@index([userId])

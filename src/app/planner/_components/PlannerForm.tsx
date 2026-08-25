@@ -152,7 +152,7 @@ export function PlannerForm() {
                   <div className="shrink-0 text-right">
                     <div className="mb-1 text-lg font-bold text-violet-600">{c.matchScore}%</div>
                     <p className="text-[10px] uppercase tracking-wider text-zinc-400">Match</p>
-                    <p className="mt-1 text-xs text-zinc-500">{formatFollower(c.followerCount)} followers</p>
+                    <p className="mt-1 text-xs text-zinc-500">{formatFollower(c.followerCount ?? 0)} followers</p>
                     {c.typicalRateMin && (
                       <p className="text-xs font-medium text-zinc-700">{formatIDR(c.typicalRateMin)}+</p>
                     )}

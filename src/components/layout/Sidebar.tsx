@@ -1,15 +1,16 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Megaphone, Users, Building2 } from "lucide-react"
+import { LayoutDashboard, Megaphone, Users, Building2, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { UserMenu } from "./UserMenu"
 
 const navItems = [
-  { href: "/",          label: "Dashboard",         icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard",         icon: LayoutDashboard },
   { href: "/campaigns", label: "Campaigns",          icon: Megaphone },
   { href: "/creators",  label: "Creator Workspace",  icon: Users },
-  { href: "/brands",    label: "Brands",             icon: Building2 },
+  { href: "/brands",           label: "Brands",              icon: Building2   },
+  { href: "/social-accounts", label: "Verify Accounts",     icon: ShieldCheck },
 ]
 
 interface SidebarProps {
@@ -30,7 +31,7 @@ export function Sidebar({ user }: SidebarProps) {
       {/* Nav */}
       <nav className="flex-1 space-y-0.5 px-2 py-3">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href)
+          const isActive = pathname === href || pathname.startsWith(`${href}/`)
           return (
             <Link
               key={href}

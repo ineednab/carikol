@@ -23,7 +23,7 @@ export function CariKOLLogo({ size = "md", className }: Props) {
       >
         KOL
       </span>
-      <span className="text-[#E8547A]">.</span>
+      <span className="text-[#E8547A]">.id</span>
     </span>
   )
 }

@@ -20,4 +20,33 @@ export const campaignRepository = {
       take: limit,
     })
   },
+
+  async list() {
+    return prisma.campaign.findMany({
+      include: {
+        brand: { select: { name: true } },
+        brief: { select: { postingDate: true, contentDeadline: true } },
+        _count: { select: { applications: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    })
+  },
+
+  async getById(id: string) {
+    return prisma.campaign.findUnique({
+      where: { id },
+      include: {
+        brand: true,
+        brief: true,
+        createdBy: { select: { name: true, email: true } },
+        applications: {
+          include: {
+            creator: { select: { id: true, name: true, city: true, contact: true } },
+            outcome: true,
+          },
+          orderBy: { appliedAt: "desc" },
+        },
+      },
+    })
+  },
 }

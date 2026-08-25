@@ -1,196 +1,289 @@
-import { PrismaClient, UserRole, Platform, CreatorTier, CampaignStatus, DecisionType, DecisionOwner, Confidence, WouldWorkAgain } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import {
+  PrismaClient,
+  UserRole,
+  SyncType,
+  CapturedBy,
+  ApplicationStatus,
+  CampaignType,
+  CampaignStatus,
+  WouldWorkAgain,
+  NoteVisibility,
+} from "@prisma/client"
+import bcrypt from "bcryptjs"
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 async function main() {
-  console.log("🌱 Seeding CariKOL database...");
+  console.log("Seeding CariKOL database...")
 
-  // ─── Users ────────────────────────────────
-  const hashedPassword = await bcrypt.hash("password123", 10);
+  // ─── Platforms ────────────────────────────────────────────────────────────
+  await prisma.platform.createMany({
+    data: [
+      { id: "tiktok",    name: "TikTok",    supportsAutoSync: true,  supportsLogin: true  },
+      { id: "instagram", name: "Instagram", supportsAutoSync: false, supportsLogin: false },
+      { id: "youtube",   name: "YouTube",   supportsAutoSync: false, supportsLogin: false },
+      { id: "threads",   name: "Threads",   supportsAutoSync: false, supportsLogin: false },
+      { id: "linkedin",  name: "LinkedIn",  supportsAutoSync: false, supportsLogin: false },
+      { id: "other",     name: "Other",     supportsAutoSync: false, supportsLogin: false },
+    ],
+    skipDuplicates: true,
+  })
+  console.log("Platforms created")
+
+  // ─── Users ────────────────────────────────────────────────────────────────
+  const hashedPassword = await bcrypt.hash("password123", 10)
 
   const [nabila, cao] = await Promise.all([
     prisma.user.upsert({
-      where: { email: "satepacdang@gmail.com" },
+      where:  { email: "satepacdang@gmail.com" },
       update: {},
-      create: { name: "Nabila", email: "satepacdang@gmail.com", password: hashedPassword, role: UserRole.admin },
+      create: {
+        name:     "Nabila",
+        email:    "satepacdang@gmail.com",
+        password: hashedPassword,
+        role:     UserRole.admin,
+      },
     }),
     prisma.user.upsert({
-      where: { email: "kerjaancao@gmail.com" },
+      where:  { email: "kerjaancao@gmail.com" },
       update: {},
-      create: { name: "Cao", email: "kerjaancao@gmail.com", password: hashedPassword, role: UserRole.campaign_manager },
+      create: {
+        name:     "Cao",
+        email:    "kerjaancao@gmail.com",
+        password: hashedPassword,
+        role:     UserRole.campaign_manager,
+      },
     }),
-  ]);
+  ])
+  console.log("Users created")
 
-  console.log("✅ Users created");
+  // ─── Brands ───────────────────────────────────────────────────────────────
+  const [wardah, scarlett, somethinc, emina] = await Promise.all([
+    prisma.brand.create({
+      data: { name: "Wardah Cosmetics",  industry: "Beauty & Skincare", accountManagerId: nabila.id, notes: "Halal beauty brand. Prefer family-friendly content." },
+    }),
+    prisma.brand.create({
+      data: { name: "Scarlett Whitening", industry: "Beauty & Skincare", accountManagerId: nabila.id, notes: "Body care & skincare. Target: wanita 20-35 tahun." },
+    }),
+    prisma.brand.create({
+      data: { name: "SOMETHINC",          industry: "Skincare",          accountManagerId: cao.id, notes: "Science-based skincare. Prefer educational content." },
+    }),
+    prisma.brand.create({
+      data: { name: "Emina Cosmetics",    industry: "Beauty",            accountManagerId: cao.id, notes: "Youth-oriented brand. Playful, colorful aesthetic." },
+    }),
+  ])
+  console.log("Brands created")
 
-  // ─── Brands ───────────────────────────────
-  const [wardah, scarlett, , somethinc] = await Promise.all([
-    prisma.brand.create({ data: { name: "Wardah Cosmetics", industry: "Beauty & Skincare", accountManagerId: nabila.id, notes: "Halal beauty brand. Prefer family-friendly content." } }),
-    prisma.brand.create({ data: { name: "Scarlett Whitening", industry: "Beauty & Skincare", accountManagerId: nabila.id, notes: "Body care & skincare. Target: wanita 20-35 tahun." } }),
-    prisma.brand.create({ data: { name: "Emina Cosmetics", industry: "Beauty", accountManagerId: cao.id, notes: "Youth-oriented brand. Playful, colorful aesthetic." } }),
-    prisma.brand.create({ data: { name: "SOMETHINC", industry: "Skincare", accountManagerId: cao.id, notes: "Science-based skincare. Prefer educational content." } }),
-    prisma.brand.create({ data: { name: "MS Glow", industry: "Beauty & Wellness", accountManagerId: nabila.id } }),
-  ]);
+  // ─── Creators ─────────────────────────────────────────────────────────────
+  const now = new Date()
+  const sevenDaysOut = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+  const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
 
-  console.log("✅ Brands created");
+  // Creator 1: Aurel Santika
+  const creator1 = await prisma.creator.create({ data: { name: "Aurel Santika", contact: "+62811000001", city: "Jakarta" } })
+  await prisma.creatorCategory.createMany({ data: [{ creatorId: creator1.id, category: "Beauty" }, { creatorId: creator1.id, category: "Skincare" }] })
+  const acc1 = await prisma.socialAccount.create({
+    data: {
+      creatorId:   creator1.id,
+      platformId:  "tiktok",
+      username:    "aurelsantika",
+      displayName: "Aurel Santika",
+      syncType:    SyncType.AUTO,
+      connectedAt: sevenDaysAgo,
+      lastSyncAt:  now,
+      nextSyncAt:  sevenDaysOut,
+    },
+  })
+  await prisma.socialSnapshot.createMany({
+    data: [
+      { accountId: acc1.id, followerCount: 1_200_000, followingCount: 420, postCount: 380, engagementRate: 4.2, capturedBy: CapturedBy.AUTO, capturedAt: sevenDaysAgo },
+      { accountId: acc1.id, followerCount: 1_240_000, followingCount: 422, postCount: 392, engagementRate: 4.4, capturedBy: CapturedBy.AUTO, capturedAt: now },
+    ],
+  })
 
-  // ─── Creators (20) ────────────────────────
-  const creatorData = [
-    { name: "Aurel Santika", username: "@aurelsantika", platform: Platform.tiktok, niche: "Beauty & Skincare", tier: CreatorTier.macro, followerCount: 1_200_000, engagementRate: 4.2, typicalRateMin: 3_000_000, typicalRateMax: 5_000_000, contact: "+62811000001" },
-    { name: "Reni Anggraini", username: "@renianggraini", platform: Platform.instagram, niche: "Lifestyle & Beauty", tier: CreatorTier.micro, followerCount: 85_000, engagementRate: 6.8, typicalRateMin: 800_000, typicalRateMax: 1_500_000, contact: "+62811000002" },
-    { name: "Tika Wulandari", username: "@tikawulandari", platform: Platform.tiktok, niche: "Food & Lifestyle", tier: CreatorTier.macro, followerCount: 2_300_000, engagementRate: 5.1, typicalRateMin: 5_000_000, typicalRateMax: 8_000_000, contact: "+62811000003" },
-    { name: "Bowo Kusuma", username: "@bowokusuma", platform: Platform.youtube, niche: "Tech & Gadgets", tier: CreatorTier.micro, followerCount: 150_000, engagementRate: 3.5, typicalRateMin: 2_000_000, typicalRateMax: 3_500_000, contact: "+62811000004" },
-    { name: "Nadia Putri", username: "@nadiaputriskincare", platform: Platform.instagram, niche: "Skincare & Beauty", tier: CreatorTier.micro, followerCount: 210_000, engagementRate: 7.3, typicalRateMin: 1_500_000, typicalRateMax: 2_500_000, contact: "+62811000005" },
-    { name: "Farah Salma", username: "@farahsalmabeauty", platform: Platform.tiktok, niche: "Beauty & Makeup", tier: CreatorTier.mega, followerCount: 5_400_000, engagementRate: 3.8, typicalRateMin: 10_000_000, typicalRateMax: 18_000_000, contact: "+62811000006", notes: "Butuh lead time 3 minggu minimal." },
-    { name: "Hendra Wijaya", username: "@hendrawijayafit", platform: Platform.instagram, niche: "Fitness & Health", tier: CreatorTier.micro, followerCount: 95_000, engagementRate: 8.2, typicalRateMin: 700_000, typicalRateMax: 1_200_000, contact: "+62811000007" },
-    { name: "Karina Lestari", username: "@karinalestariofficial", platform: Platform.tiktok, niche: "Beauty & Fashion", tier: CreatorTier.macro, followerCount: 890_000, engagementRate: 5.6, typicalRateMin: 2_500_000, typicalRateMax: 4_000_000, contact: "+62811000008" },
-    { name: "Bagas Hermawan", username: "@bagashermawanvlog", platform: Platform.youtube, niche: "Lifestyle & Travel", tier: CreatorTier.micro, followerCount: 320_000, engagementRate: 4.1, typicalRateMin: 3_000_000, typicalRateMax: 5_000_000, contact: "+62811000009" },
-    { name: "Mega Pratiwi", username: "@megapratiwiskincare", platform: Platform.instagram, niche: "Skincare & Wellness", tier: CreatorTier.micro, followerCount: 175_000, engagementRate: 6.5, typicalRateMin: 1_200_000, typicalRateMax: 2_000_000, contact: "+62811000010" },
-    { name: "Rizky Amelia", username: "@rizkyamelia_", platform: Platform.tiktok, niche: "Beauty & Skincare", tier: CreatorTier.nano, followerCount: 45_000, engagementRate: 9.1, typicalRateMin: 300_000, typicalRateMax: 600_000, contact: "+62811000011" },
-    { name: "Dian Permata", username: "@dianpermatabeauty", platform: Platform.instagram, niche: "Beauty & Parenting", tier: CreatorTier.micro, followerCount: 130_000, engagementRate: 7.8, typicalRateMin: 900_000, typicalRateMax: 1_600_000, contact: "+62811000012" },
-    { name: "Yudha Saputra", username: "@yudhasaputraofficial", platform: Platform.tiktok, niche: "Comedy & Entertainment", tier: CreatorTier.macro, followerCount: 3_100_000, engagementRate: 6.2, typicalRateMin: 6_000_000, typicalRateMax: 10_000_000, contact: "+62811000013" },
-    { name: "Anisa Rahma", username: "@anisarahmaskincare", platform: Platform.instagram, niche: "Skincare & Beauty", tier: CreatorTier.micro, followerCount: 250_000, engagementRate: 5.9, typicalRateMin: 1_800_000, typicalRateMax: 3_000_000, contact: "+62811000014" },
-    { name: "Citra Dewi", username: "@citradewi_beauty", platform: Platform.tiktok, niche: "Beauty & Makeup Tutorial", tier: CreatorTier.micro, followerCount: 420_000, engagementRate: 7.1, typicalRateMin: 1_500_000, typicalRateMax: 2_800_000, contact: "+62811000015" },
-    { name: "Fitri Handayani", username: "@fitrihandayanivlog", platform: Platform.youtube, niche: "Lifestyle & Beauty", tier: CreatorTier.micro, followerCount: 195_000, engagementRate: 4.8, typicalRateMin: 2_000_000, typicalRateMax: 3_500_000, contact: "+62811000016" },
-    { name: "Gilang Ramadhan", username: "@gilangramadhanfit", platform: Platform.instagram, niche: "Fitness & Wellness", tier: CreatorTier.nano, followerCount: 38_000, engagementRate: 10.2, typicalRateMin: 250_000, typicalRateMax: 500_000, contact: "+62811000017" },
-    { name: "Helena Wijaya", username: "@helenawijayabeauty", platform: Platform.tiktok, niche: "Beauty & Skincare", tier: CreatorTier.micro, followerCount: 560_000, engagementRate: 6.4, typicalRateMin: 2_000_000, typicalRateMax: 3_500_000, contact: "+62811000018" },
-    { name: "Irfan Hidayat", username: "@irfanhidayatofficial", platform: Platform.youtube, niche: "Tech & Review", tier: CreatorTier.micro, followerCount: 280_000, engagementRate: 3.9, typicalRateMin: 2_500_000, typicalRateMax: 4_000_000, contact: "+62811000019", isActive: false, notes: "Sementara tidak aktif menerima endorsement." },
-    { name: "Jessica Tanaka", username: "@jessicatanakaid", platform: Platform.instagram, niche: "Beauty & Korean Culture", tier: CreatorTier.micro, followerCount: 310_000, engagementRate: 8.6, typicalRateMin: 2_200_000, typicalRateMax: 3_800_000, contact: "+62811000020" },
-  ];
+  // Creator 2: Reni Anggraini
+  const creator2 = await prisma.creator.create({ data: { name: "Reni Anggraini", contact: "+62811000002", city: "Bandung" } })
+  await prisma.creatorCategory.createMany({ data: [{ creatorId: creator2.id, category: "Lifestyle" }, { creatorId: creator2.id, category: "Beauty" }] })
+  const acc2 = await prisma.socialAccount.create({
+    data: { creatorId: creator2.id, platformId: "instagram", username: "renianggraini", displayName: "Reni Anggraini", syncType: SyncType.MANUAL },
+  })
+  await prisma.socialSnapshot.create({
+    data: { accountId: acc2.id, followerCount: 85_000, followingCount: 1_200, postCount: 210, engagementRate: 6.8, capturedBy: CapturedBy.MANUAL, capturedAt: now },
+  })
 
-  const creators = await Promise.all(creatorData.map(data => prisma.creator.create({ data })));
-  const [aurel, reni, , , nadia, , , karina, , , , , , anisa, citra] = creators;
+  // Creator 3: Tika Wulandari
+  const creator3 = await prisma.creator.create({ data: { name: "Tika Wulandari", contact: "+62811000003", city: "Surabaya" } })
+  await prisma.creatorCategory.createMany({ data: [{ creatorId: creator3.id, category: "Food" }, { creatorId: creator3.id, category: "Lifestyle" }] })
+  const acc3 = await prisma.socialAccount.create({
+    data: { creatorId: creator3.id, platformId: "tiktok", username: "tikawulandari", displayName: "Tika Wulandari", syncType: SyncType.MANUAL },
+  })
+  await prisma.socialSnapshot.createMany({
+    data: [
+      { accountId: acc3.id, followerCount: 2_250_000, postCount: 520, engagementRate: 5.0, capturedBy: CapturedBy.MANUAL, capturedAt: fourteenDaysAgo },
+      { accountId: acc3.id, followerCount: 2_300_000, postCount: 535, engagementRate: 5.1, capturedBy: CapturedBy.MANUAL, capturedAt: now },
+    ],
+  })
 
-  console.log(`✅ ${creators.length} creators created`);
+  // Creator 4: Nadia Putri
+  const creator4 = await prisma.creator.create({ data: { name: "Nadia Putri", contact: "+62811000005", city: "Jakarta" } })
+  await prisma.creatorCategory.createMany({ data: [{ creatorId: creator4.id, category: "Skincare" }, { creatorId: creator4.id, category: "Beauty" }] })
+  const acc4 = await prisma.socialAccount.create({
+    data: { creatorId: creator4.id, platformId: "instagram", username: "nadiaputriskincare", displayName: "Nadia Putri", syncType: SyncType.MANUAL },
+  })
+  await prisma.socialSnapshot.create({
+    data: { accountId: acc4.id, followerCount: 210_000, followingCount: 980, postCount: 340, engagementRate: 7.3, capturedBy: CapturedBy.MANUAL, capturedAt: now },
+  })
 
-  // ─── Campaign 1: Wardah — Closed ──────────
+  // Creator 5: Karina Lestari
+  const creator5 = await prisma.creator.create({ data: { name: "Karina Lestari", contact: "+62811000008", city: "Yogyakarta" } })
+  await prisma.creatorCategory.createMany({ data: [{ creatorId: creator5.id, category: "Fashion" }, { creatorId: creator5.id, category: "Beauty" }] })
+  const acc5 = await prisma.socialAccount.create({
+    data: { creatorId: creator5.id, platformId: "tiktok", username: "karinalestariofficial", displayName: "Karina Lestari", syncType: SyncType.MANUAL },
+  })
+  await prisma.socialSnapshot.create({
+    data: { accountId: acc5.id, followerCount: 890_000, postCount: 410, engagementRate: 5.6, capturedBy: CapturedBy.MANUAL, capturedAt: now },
+  })
+
+  console.log("5 creators created")
+
+  // ─── Campaign 1: Wardah — PAID, closed ────────────────────────────────────
   const campaign1 = await prisma.campaign.create({
-    data: { name: "Wardah Lightening Series Q2 2026", brandId: wardah.id, status: CampaignStatus.closed, createdById: nabila.id, closedAt: new Date("2026-06-20") },
-  });
+    data: {
+      name:         "Wardah Lightening Series Q2 2026",
+      brandId:      wardah.id,
+      type:         CampaignType.PAID,
+      rewardAmount: 2_000_000,
+      status:       CampaignStatus.closed,
+      createdById:  nabila.id,
+      closedAt:     new Date("2026-06-20"),
+    },
+  })
   await prisma.brief.create({
     data: {
-      campaignId: campaign1.id, platform: Platform.instagram,
-      objective: "Meningkatkan awareness Wardah Lightening Series melalui konten review dan tutorial",
+      campaignId:      campaign1.id,
+      platforms:       "Instagram",
+      objective:       "Meningkatkan awareness Wardah Lightening Series melalui konten review dan tutorial",
       creatorCriteria: "Female beauty creator, 18-35 tahun, niche skincare/beauty, engagement rate min 5%",
-      budgetMin: 15_000_000, budgetMax: 25_000_000,
-      deliverables: "1 feed post + 3 story (24 jam) + 1 reel per creator",
-      startDate: new Date("2026-05-01"), contentDeadline: new Date("2026-05-25"), postingDate: new Date("2026-06-01"),
+      budgetMin:       15_000_000,
+      budgetMax:       25_000_000,
+      deliverables:    "1 feed post + 3 story (24 jam) + 1 reel per creator",
+      startDate:       new Date("2026-05-01"),
+      contentDeadline: new Date("2026-05-25"),
+      postingDate:     new Date("2026-06-01"),
     },
-  });
+  })
 
-  for (const [type, owner, extra] of [
-    [DecisionType.creator_proposed, DecisionOwner.system, {}],
-    [DecisionType.internal_approved, DecisionOwner.campaign_manager, {}],
-    [DecisionType.client_approved, DecisionOwner.client, {}],
-    [DecisionType.creator_confirmed, DecisionOwner.creator, { confirmedRate: 2_000_000 }],
-  ] as const) {
-    await prisma.decision.create({
-      data: { campaignId: campaign1.id, creatorId: nadia.id, type, owner, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-10"), ...extra },
-    });
-  }
+  // Applications for Campaign 1
+  const app1Nadia = await prisma.application.create({
+    data: { campaignId: campaign1.id, creatorId: creator4.id, status: ApplicationStatus.COMPLETED, appliedAt: new Date("2026-05-10") },
+  })
+  await prisma.application.create({
+    data: { campaignId: campaign1.id, creatorId: creator2.id, status: ApplicationStatus.REJECTED, appliedAt: new Date("2026-05-02") },
+  })
+  await prisma.application.create({
+    data: { campaignId: campaign1.id, creatorId: creator5.id, status: ApplicationStatus.REJECTED, appliedAt: new Date("2026-05-02") },
+  })
 
-  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.creator_proposed, owner: DecisionOwner.system, confidence: Confidence.explicit, recordedById: cao.id, decidedAt: new Date("2026-05-02") } });
-  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.internal_approved, owner: DecisionOwner.campaign_manager, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-04") } });
-  const reniClientRejected = await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: reni.id, type: DecisionType.client_rejected, owner: DecisionOwner.client, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-08") } });
-  await prisma.decisionReason.create({ data: { decisionId: reniClientRejected.id, category: "tidak_sesuai_brand_image", freeText: "Klien merasa estetika konten tidak cocok dengan brand Wardah yang natural" } });
+  // Outcome for campaign 1
+  await prisma.outcomeReview.create({
+    data: {
+      applicationId:  app1Nadia.id,
+      campaignId:     campaign1.id,
+      creatorId:      creator4.id,
+      contentQuality: 5,
+      communication:  4,
+      professionalism: 5,
+      wouldWorkAgain: WouldWorkAgain.yes,
+      notes:          "Konten sangat bagus, sesuai brief, posting on time.",
+      completedById:  nabila.id,
+      completedAt:    new Date("2026-06-18"),
+    },
+  })
 
-  await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: karina.id, type: DecisionType.creator_proposed, owner: DecisionOwner.system, confidence: Confidence.explicit, recordedById: cao.id, decidedAt: new Date("2026-05-02") } });
-  const karinaRejected = await prisma.decision.create({ data: { campaignId: campaign1.id, creatorId: karina.id, type: DecisionType.internal_rejected, owner: DecisionOwner.campaign_manager, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-04") } });
-  await prisma.decisionReason.create({ data: { decisionId: karinaRejected.id, category: "budget_tidak_sesuai", freeText: "Rate Karina di atas budget campaign ini" } });
+  console.log("Campaign 1 (Wardah closed) created")
 
-  for (const [type, owner, extra] of [
-    [DecisionType.creator_proposed, DecisionOwner.system, {}],
-    [DecisionType.internal_approved, DecisionOwner.campaign_manager, {}],
-    [DecisionType.client_approved, DecisionOwner.client, {}],
-    [DecisionType.creator_confirmed, DecisionOwner.creator, { confirmedRate: 2_200_000 }],
-  ] as const) {
-    await prisma.decision.create({
-      data: { campaignId: campaign1.id, creatorId: anisa.id, type, owner, confidence: Confidence.explicit, recordedById: nabila.id, decidedAt: new Date("2026-05-14"), ...extra },
-    });
-  }
-
-  await prisma.outcomeReview.create({ data: { campaignId: campaign1.id, creatorId: nadia.id, contentQuality: 5, communication: 4, professionalism: 5, wouldWorkAgain: WouldWorkAgain.yes, notes: "Konten sangat bagus, sesuai brief, posting on time.", completedById: nabila.id, completedAt: new Date("2026-06-18") } });
-  await prisma.outcomeReview.create({ data: { campaignId: campaign1.id, creatorId: anisa.id, contentQuality: 4, communication: 5, professionalism: 4, wouldWorkAgain: WouldWorkAgain.yes, notes: "Komunikasi sangat responsif, konten sesuai guidelines.", completedById: nabila.id, completedAt: new Date("2026-06-18") } });
-
-  console.log("✅ Campaign 1 (Wardah — Closed) created");
-
-  // ─── Campaign 2: Scarlett — Active ────────
+  // ─── Campaign 2: Scarlett — BARTER, active ────────────────────────────────
   const campaign2 = await prisma.campaign.create({
-    data: { name: "Scarlett Body Lotion Ramadan Edition", brandId: scarlett.id, status: CampaignStatus.active, createdById: nabila.id },
-  });
+    data: {
+      name:        "Scarlett Body Lotion Ramadan Edition",
+      brandId:     scarlett.id,
+      type:        CampaignType.BARTER,
+      status:      CampaignStatus.active,
+      createdById: nabila.id,
+    },
+  })
   await prisma.brief.create({
     data: {
-      campaignId: campaign2.id, platform: Platform.tiktok,
-      objective: "Promote Scarlett Ramadan Edition body lotion dengan angle self-care selama Ramadan",
+      campaignId:      campaign2.id,
+      platforms:       "TikTok",
+      objective:       "Promote Scarlett Ramadan Edition body lotion dengan angle self-care selama Ramadan",
       creatorCriteria: "Female creator, beauty/lifestyle niche, min 50K followers TikTok, engagement min 4%",
-      budgetMin: 20_000_000, budgetMax: 35_000_000,
-      deliverables: "1 TikTok video (45-60 detik) per creator, mention promo code",
-      startDate: new Date("2026-07-15"), contentDeadline: new Date("2026-07-30"), postingDate: new Date("2026-08-01"),
+      budgetMin:       20_000_000,
+      budgetMax:       35_000_000,
+      deliverables:    "1 TikTok video (45-60 detik) per creator, mention promo code",
+      startDate:       new Date("2026-07-15"),
+      contentDeadline: new Date("2026-07-30"),
+      postingDate:     new Date("2026-08-01"),
     },
-  });
+  })
+  await prisma.application.create({
+    data: { campaignId: campaign2.id, creatorId: creator1.id, status: ApplicationStatus.CONTENT_SUBMITTED, appliedAt: new Date("2026-07-14") },
+  })
+  await prisma.application.create({
+    data: { campaignId: campaign2.id, creatorId: creator3.id, status: ApplicationStatus.SELECTED, appliedAt: new Date("2026-07-15") },
+  })
 
-  for (const [type, owner, extra] of [
-    [DecisionType.creator_proposed, DecisionOwner.system, {}],
-    [DecisionType.internal_approved, DecisionOwner.campaign_manager, {}],
-    [DecisionType.client_approved, DecisionOwner.client, {}],
-    [DecisionType.creator_confirmed, DecisionOwner.creator, { confirmedRate: 4_500_000 }],
-  ] as const) {
-    await prisma.decision.create({
-      data: { campaignId: campaign2.id, creatorId: aurel.id, type, owner, confidence: Confidence.explicit, recordedById: cao.id, decidedAt: new Date("2026-07-14"), ...extra },
-    });
-  }
+  console.log("Campaign 2 (Scarlett active) created")
 
-  for (const [type, owner, extra] of [
-    [DecisionType.creator_proposed, DecisionOwner.system, {}],
-    [DecisionType.internal_approved, DecisionOwner.campaign_manager, {}],
-    [DecisionType.client_approved, DecisionOwner.client, { confidence: Confidence.inferred }],
-    [DecisionType.creator_confirmed, DecisionOwner.creator, { confirmedRate: 2_500_000 }],
-  ] as const) {
-    await prisma.decision.create({
-      data: { campaignId: campaign2.id, creatorId: citra.id, type, owner, confidence: Confidence.explicit, recordedById: cao.id, decidedAt: new Date("2026-07-15"), ...extra },
-    });
-  }
-
-  console.log("✅ Campaign 2 (Scarlett — Active) created");
-
-  // ─── Campaign 3: SOMETHINC — Draft ────────
-  const campaign3 = await prisma.campaign.create({
-    data: { name: "SOMETHINC Niacinamide Launch", brandId: somethinc.id, status: CampaignStatus.draft, createdById: cao.id },
-  });
-  await prisma.brief.create({
+  // ─── Campaign 3 & 4: Drafts ───────────────────────────────────────────────
+  await prisma.campaign.create({
     data: {
-      campaignId: campaign3.id, platform: Platform.instagram,
-      objective: "Edukasi audience tentang manfaat Niacinamide dan positioning produk baru SOMETHINC",
-      creatorCriteria: "Skincare enthusiast, konten edukatif, min 100K followers, science-friendly content",
-      budgetMin: 30_000_000, budgetMax: 50_000_000,
-      deliverables: "1 carousel post (min 5 slides) + 1 reels review + 5 stories per creator",
-      startDate: new Date("2026-08-01"), contentDeadline: new Date("2026-08-20"), postingDate: new Date("2026-08-25"),
-      specialRequirements: "Wajib mention key ingredients: Niacinamide 10%, Zinc 1%. Tidak boleh bandingkan dengan brand lain.",
+      name:        "SOMETHINC Niacinamide Launch",
+      brandId:     somethinc.id,
+      type:        CampaignType.PAID,
+      status:      CampaignStatus.draft,
+      createdById: cao.id,
     },
-  });
+  })
+  await prisma.campaign.create({
+    data: {
+      name:        "Emina Summer Glow 2026",
+      brandId:     emina.id,
+      type:        CampaignType.BARTER,
+      status:      CampaignStatus.draft,
+      createdById: cao.id,
+    },
+  })
+  console.log("Campaigns 3 & 4 (drafts) created")
 
-  console.log("✅ Campaign 3 (SOMETHINC — Draft) created");
+  // ─── Internal Notes ───────────────────────────────────────────────────────
+  await prisma.internalNote.createMany({
+    data: [
+      { creatorId: creator1.id, content: "Aurel sangat profesional dan responsif. Cocok untuk campaign premium.", authorId: nabila.id, visibility: NoteVisibility.TEAM },
+      { creatorId: creator1.id, content: "Perlu lead time minimal 2 minggu untuk konten yang butuh props.", authorId: cao.id, visibility: NoteVisibility.TEAM },
+      { creatorId: creator4.id, content: "Konten Nadia selalu on-brand, sangat direkomendasikan untuk Wardah dan Scarlett.", authorId: nabila.id, visibility: NoteVisibility.TEAM },
+    ],
+  })
+  console.log("Internal notes created")
 
-  // ─── Audit Logs ───────────────────────────
+  // ─── Audit Logs ───────────────────────────────────────────────────────────
   await prisma.auditLog.createMany({
     data: [
-      { event: "campaign.created", entityType: "campaign", entityId: campaign1.id, userId: nabila.id },
+      { event: "campaign.created",   entityType: "campaign", entityId: campaign1.id, userId: nabila.id },
       { event: "campaign.activated", entityType: "campaign", entityId: campaign1.id, userId: nabila.id },
-      { event: "campaign.closed", entityType: "campaign", entityId: campaign1.id, userId: nabila.id },
-      { event: "campaign.created", entityType: "campaign", entityId: campaign2.id, userId: nabila.id },
+      { event: "campaign.closed",    entityType: "campaign", entityId: campaign1.id, userId: nabila.id },
+      { event: "campaign.created",   entityType: "campaign", entityId: campaign2.id, userId: nabila.id },
       { event: "campaign.activated", entityType: "campaign", entityId: campaign2.id, userId: nabila.id },
-      { event: "campaign.created", entityType: "campaign", entityId: campaign3.id, userId: cao.id },
     ],
-  });
+  })
 
-  console.log("✅ Audit logs created");
-  console.log("\n🎉 Seeding complete!");
-  console.log("\nLogin credentials (password: password123):");
-  console.log("  satepacdang@gmail.com  — Admin");
-  console.log("  kerjaancao@gmail.com   — Campaign Manager");
+  console.log("\nSeeding complete!")
+  console.log("\nLogin credentials (password: password123):")
+  console.log("  satepacdang@gmail.com  — Admin")
+  console.log("  kerjaancao@gmail.com   — Campaign Manager")
 }
 
 main()
-  .catch((e) => { console.error(e); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+  .catch((e) => { console.error(e); process.exit(1) })
+  .finally(async () => { await prisma.$disconnect() })

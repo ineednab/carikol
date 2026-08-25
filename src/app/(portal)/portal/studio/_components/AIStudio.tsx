@@ -1,19 +1,17 @@
 "use client"
 import { useState } from "react"
-import Link from "next/link"
-import { Sparkles, RefreshCw, ExternalLink } from "lucide-react"
+import { Sparkles, RefreshCw } from "lucide-react"
 import { generateAIStudioAction, type AIStudioResult } from "@/modules/creator/actions/generate-ai-studio"
 import { StudioBlocks } from "./StudioBlocks"
 
 interface Props {
-  creatorUsername: string
   initialData: AIStudioResult | null
 }
 
-export function AIStudio({ creatorUsername, initialData }: Props) {
-  const [loading, setLoading]   = useState(false)
-  const [result, setResult]     = useState<AIStudioResult | null>(initialData)
-  const [error, setError]       = useState<string | null>(null)
+export function AIStudio({ initialData }: Props) {
+  const [loading, setLoading] = useState(false)
+  const [result, setResult]   = useState<AIStudioResult | null>(initialData)
+  const [error, setError]     = useState<string | null>(null)
 
   const generate = async () => {
     setLoading(true)
@@ -61,17 +59,7 @@ export function AIStudio({ creatorUsername, initialData }: Props) {
   return (
     <div className="space-y-4">
       <StudioBlocks data={result} />
-
-      {/* Actions */}
       <div className="flex gap-3 pt-2">
-        <Link
-          href={`/k/${creatorUsername}`}
-          target="_blank"
-          className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 py-2.5 text-sm font-medium text-violet-700 transition hover:bg-violet-100"
-        >
-          <ExternalLink size={13} />
-          Open Digital Passport
-        </Link>
         <button
           onClick={generate}
           disabled={loading}
