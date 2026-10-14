@@ -174,3 +174,10 @@
 .prose-legal ul li { margin-bottom: 0.35rem; }
 .prose-legal a { color: #6D28D9; text-decoration: underline; text-underline-offset: 2px; }
 .prose-legal strong { font-weight: 700; color: #18122B; }
+
+/* Font size on the spacing scale: `fs-24` = 24 × --spacing. The /deck slides
+   set --spacing to one design pixel of a 1920px canvas, so text scales with
+   the slide. */
+@utility fs-* {
+  font-size: calc(var(--spacing) * --value(number));
+}
