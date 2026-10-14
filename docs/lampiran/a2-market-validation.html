@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920">
+<title>A2 Market Validation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap" rel="stylesheet">
+<!--
+  Lampiran A2 — Market Validation (slide 1920×1080).
+  Ekspor PNG: buka di Chromium dengan viewport 1920×1080 lalu screenshot
+  (mis. Playwright, deviceScaleFactor 2 → a2-market-validation.png 3840×2160).
+  Lebar bar = persentase sebenarnya dari kelompoknya (track penuh = 100%).
+-->
+<style>
+  :root {
+    --ink: #13112b;
+    --ink-2: #4a4763;
+    --muted: #7d7a94;
+    --line: #ece7f7;
+    --card: rgba(255, 255, 255, 0.78);
+    --card-solid: #ffffff;
+    --purple: #7c3aed;
+    --purple-deep: #6d28d9;
+    --violet: #9333ea;
+    --magenta: #c026d3;
+    --pink: #ec4899;
+    --purple-50: #f3edff;
+    --purple-100: #ebe3fd;
+    --pink-50: #fde8f2;
+    --pink-100: #fbe0ec;
+    --grad: linear-gradient(100deg, #6d28d9 0%, #9333ea 45%, #c026d3 100%);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { width: 1920px; height: 1080px; }
+
+  body {
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    color: var(--ink);
+    background: #fbf9fe;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    padding: 44px 60px 30px;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    row-gap: 26px;
+    isolation: isolate;
+  }
+
+  /* soft background washes */
+  .page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(520px 380px at 92% -4%, rgba(236, 72, 153, 0.13), transparent 70%),
+      radial-gradient(560px 420px at 104% 30%, rgba(147, 51, 234, 0.10), transparent 70%),
+      radial-gradient(620px 460px at -6% 92%, rgba(124, 58, 237, 0.10), transparent 70%),
+      radial-gradient(520px 420px at 102% 104%, rgba(236, 72, 153, 0.12), transparent 70%),
+      radial-gradient(700px 500px at 40% 60%, rgba(124, 58, 237, 0.04), transparent 70%);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 26px;
+    box-shadow: 0 1px 2px rgba(60, 30, 120, 0.04), 0 12px 40px -18px rgba(90, 40, 170, 0.18);
+  }
+
+  /* ---------- TOP ROW ---------- */
+  .top {
+    display: grid;
+    grid-template-columns: 1fr 630px;
+    column-gap: 40px;
+  }
+
+  .eyebrow {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--purple);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple); }
+
+  h1 {
+    margin-top: 22px;
+    font-size: 76px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+  }
+  h1 .p { margin-left: -0.08em; }
+  h1 .accent {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .lede {
+    margin-top: 14px;
+    max-width: 1090px;
+    font-size: 24.5px;
+    line-height: 1.36;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* stats */
+  .stats {
+    margin-top: 22px;
+    height: 204px;
+    display: grid;
+    grid-template-columns: 1.55fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 0 12px;
+  }
+  .stat {
+    height: 168px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .stat + .stat { border-left: 1px solid var(--line); }
+
+  .stat-total {
+    flex-direction: row;
+    gap: 26px;
+    justify-content: center;
+  }
+  .stat-total .body { display: flex; flex-direction: column; align-items: center; }
+  .stat-total .num {
+    font-size: 84px;
+    line-height: 0.95;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .stat-total .label { margin-top: 8px; font-size: 25px; font-weight: 600; color: var(--ink-2); }
+  .pill {
+    margin-top: 12px;
+    padding: 7px 22px;
+    border-radius: 12px;
+    background: var(--purple-50);
+    color: var(--purple);
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+
+  .badge {
+    flex: none;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--purple-50);
+    color: var(--purple);
+  }
+  .badge.pink { background: var(--pink-50); color: var(--pink); }
+  .badge svg { display: block; }
+  .badge-lg { width: 92px; height: 92px; }
+  .badge-lg svg { width: 42px; height: 42px; }
+  .badge-md { width: 64px; height: 64px; }
+  .badge-md svg { width: 30px; height: 30px; }
+
+  .stat .num-sm {
+    margin-top: 12px;
+    font-size: 46px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+  .stat .who { margin-top: 8px; font-size: 24px; font-weight: 500; color: var(--ink-2); }
+  .stat .pct { margin-top: 2px; font-size: 23px; font-weight: 500; color: var(--muted); }
+
+  /* right column */
+  .right { display: flex; flex-direction: column; gap: 22px; }
+
+  .quote {
+    position: relative;
+    padding: 30px 36px 26px 112px;
+    background: linear-gradient(135deg, rgba(243, 237, 255, 0.85), rgba(253, 232, 242, 0.55));
+  }
+  .quote .mark {
+    position: absolute;
+    left: 34px;
+    top: 26px;
+    width: 52px;
+    height: 44px;
+    color: var(--purple);
+  }
+  .quote blockquote {
+    font-size: 24px;
+    line-height: 1.46;
+    font-style: italic;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .quote cite {
+    display: block;
+    margin-top: 12px;
+    font-style: normal;
+    font-size: 19px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+
+  .card-title { font-size: 25px; font-weight: 800; letter-spacing: -0.02em; }
+
+  .overall { flex: 1; padding: 26px 28px 24px; display: flex; flex-direction: column; }
+  .overall .rows { margin-top: 18px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .orow {
+    display: grid;
+    grid-template-columns: 302px 1fr 92px;
+    align-items: center;
+    column-gap: 16px;
+  }
+  .orow .lbl { font-size: 17px; font-weight: 500; line-height: 1.25; color: var(--ink); }
+  .orow .val { font-size: 18px; font-weight: 800; white-space: nowrap; text-align: left; }
+  .orow .val span { font-weight: 500; color: var(--muted); font-size: 16.5px; margin-left: 4px; }
+
+  /* bars: fill = true share of the group, track = 100% */
+  .track {
+    position: relative;
+    height: 14px;
+    border-radius: 4px;
+    background: var(--purple-100);
+    overflow: hidden;
+  }
+  .track.thin { height: 10px; }
+  .track .fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: calc(var(--v) * 1%);
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+  }
+  .track.pink { background: var(--pink-100); }
+  .track.pink .fill { background: linear-gradient(90deg, #e11d74, #f472b6); }
+
+  /* ---------- BOTTOM ROW ---------- */
+  .bottom {
+    display: grid;
+    grid-template-columns: 1fr 470px;
+    column-gap: 28px;
+    min-height: 0;
+  }
+  .bottom-left { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+
+  .types { flex: 1; padding: 24px 24px 22px; display: flex; flex-direction: column; }
+  .types .grid {
+    margin-top: 16px;
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .type {
+    background: var(--card-solid);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 18px 18px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .type header { display: flex; align-items: center; gap: 18px; }
+  .type h3 { font-size: 23px; font-weight: 800; letter-spacing: -0.02em; }
+  .type .n { margin-top: 2px; font-size: 18px; color: var(--muted); font-weight: 500; }
+  .type ol { list-style: none; margin-top: 16px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+  .type li { display: grid; grid-template-columns: 28px 1fr; column-gap: 11px; align-items: start; }
+  .rank {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    font-size: 14px; font-weight: 700;
+    background: var(--purple-50); color: var(--purple);
+  }
+  .rank.pink { background: var(--pink-50); color: var(--pink); }
+  .item-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-height: 28px; padding-top: 4px; white-space: nowrap; }
+  .item-top .lbl { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+  .item-top .val { font-size: 15.5px; font-weight: 800; white-space: nowrap; }
+  .item-top .val span { font-weight: 500; color: var(--muted); font-size: 13.5px; margin-left: 3px; }
+  .type .track { margin-top: 8px; }
+
+  .source {
+    height: 50px;
+    border-radius: 16px;
+    background: rgba(243, 237, 255, 0.8);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 22px;
+    font-size: 16.5px;
+    color: var(--ink-2);
+  }
+  .source svg { width: 30px; height: 30px; color: var(--purple); flex: none; }
+  .source b { font-weight: 700; color: var(--ink); }
+  .source .hl { color: var(--purple); font-weight: 500; }
+
+  .meaning { padding: 24px 26px; display: flex; flex-direction: column; }
+  .meaning .items { margin-top: 6px; flex: 1; display: flex; flex-direction: column; }
+  .mitem { flex: 1; display: grid; grid-template-columns: 62px 1fr; column-gap: 18px; align-items: start; align-content: center; }
+  .mitem + .mitem { border-top: 1px solid var(--line); }
+  .mitem .badge { width: 62px; height: 62px; }
+  .mitem .badge svg { width: 29px; height: 29px; }
+  .mitem h4 { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+  .mitem p { margin-top: 3px; font-size: 17px; line-height: 1.36; color: var(--ink-2); font-weight: 500; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="7.4" r="4.6" fill="currentColor"/><path d="M3.4 21.2c0-4.9 3.9-8.4 8.6-8.4s8.6 3.5 8.6 8.4z" fill="currentColor"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="7.6" r="4.1" fill="currentColor"/><path d="M1.3 20.8c0-4.3 3.4-7.4 7.7-7.4s7.7 3.1 7.7 7.4z" fill="currentColor"/><circle cx="17.3" cy="7.9" r="3.3" fill="currentColor"/><path d="M15.9 13.4c.4-.1.9-.1 1.4-.1 3.3 0 5.5 2.6 5.5 6.3v1.2h-4.4c0-3-.9-5.5-2.5-7.4z" fill="currentColor"/></symbol>
+    <symbol id="i-building" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M4 20V3.6C4 2.7 4.7 2 5.6 2h7.8c.9 0 1.6.7 1.6 1.6V8h3.4c.9 0 1.6.7 1.6 1.6V20h1.5v2H2.5v-2zM7 5.5h2.2v2.2H7zm4 0h2.2v2.2H11zM7 9.6h2.2v2.2H7zm4 0h2.2v2.2H11zM7 13.7h2.2v2.2H7zm4 0h2.2v2.2H11zm5.4-2.1h2.1v2.1h-2.1zm0 3.9h2.1v2.1h-2.1zM8.4 18v2h3.2v-2z"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="2.5" width="15" height="19" rx="2.5"/><path d="M8.5 7.5h7M8.5 11h7M8.5 14.5h7M8.5 18h4"/></g></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 11v6"/><circle cx="12" cy="7.4" r=".6" fill="currentColor"/></g></symbol>
+    <symbol id="i-quote" viewBox="0 0 52 44"><path fill="currentColor" d="M0 44V27.5C0 13 6.6 3.6 19.4 0l2.4 6.4C15.3 9 12 13.6 11.6 20.4H21V44zm30 0V27.5C30 13 36.6 3.6 49.4 0l2.4 6.4C45.3 9 42 13.6 41.6 20.4H51V44z"/></symbol>
+  </defs>
+</svg>
+
+<main class="page">
+  <!-- TOP -->
+  <section class="top">
+    <div class="left">
+      <div class="eyebrow">A2 <span class="dot"></span> MARKET VALIDATION</div>
+      <h1>137 creator<span class="p">,</span> brand<span class="p">,</span> dan agency<br>mengalami <span class="accent">masalah yang sama<span class="p">.</span></span></h1>
+      <p class="lede">Dari hasil survei di landing page CariKOL.id (Agustus 2026), responden dari berbagai peran di industri creator economy mengonfirmasi bahwa proses pengelolaan data talent dan campaign masih repetitif, manual, dan tidak efisien.</p>
+
+      <div class="card stats">
+        <div class="stat stat-total">
+          <div class="badge badge-lg"><svg><use href="#i-doc"/></svg></div>
+          <div class="body">
+            <div class="num">137</div>
+            <div class="label">Total responden</div>
+            <div class="pill">Agustus 2026<br>(137 email unik)</div>
+          </div>
+        </div>
+        <div class="stat">
+          <div class="badge badge-md"><svg><use href="#i-user"/></svg></div>
+          <div class="num-sm">99</div>
+          <div class="who">Creator</div>
+          <div class="pct">(72,3%)</div>
+        </div>
+        <div class="stat">
+          <div class="badge badge-md pink"><svg><use href="#i-building"/></svg></div>
+          <div class="num-sm">12</div>
+          <div class="who">Brand / UMKM</div>
+          <div class="pct">(8,8%)</div>
+        </div>
+        <div class="stat">
+          <div class="badge badge-md"><svg><use href="#i-users"/></svg></div>
+          <div class="num-sm">26</div>
+          <div class="who">Agency</div>
+          <div class="pct">(19,0%)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <figure class="card quote">
+        <svg class="mark"><use href="#i-quote"/></svg>
+        <blockquote>“Aku harus kirim portfolio, rate card, dan statistik yang sama berkali-kali ke brand yang berbeda.”</blockquote>
+        <cite>— Responden Creator</cite>
+      </figure>
+
+      <div class="card overall">
+        <h2 class="card-title">Masalah Utama (Semua Responden)</h2>
+        <div class="rows">
+          <div class="orow"><div class="lbl">Kirim portfolio berulang kali</div><div class="track"><div class="fill" style="--v:25.5"></div></div><div class="val">35<span>(25,5%)</span></div></div>
+          <div class="orow"><div class="lbl">Update informasi di banyak tempat</div><div class="track"><div class="fill" style="--v:16.8"></div></div><div class="val">23<span>(16,8%)</span></div></div>
+          <div class="orow"><div class="lbl">Kirim rate card berulang kali</div><div class="track"><div class="fill" style="--v:10.9"></div></div><div class="val">15<span>(10,9%)</span></div></div>
+          <div class="orow"><div class="lbl">Menjelaskan performa akun<br>berulang kali</div><div class="track"><div class="fill" style="--v:8.8"></div></div><div class="val">12<span>(8,8%)</span></div></div>
+          <div class="orow"><div class="lbl">Sulit membandingkan creator</div><div class="track"><div class="fill" style="--v:8.8"></div></div><div class="val">12<span>(8,8%)</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTTOM -->
+  <section class="bottom">
+    <div class="bottom-left">
+      <div class="card types">
+        <h2 class="card-title">Masalah Utama per Tipe Responden</h2>
+        <div class="grid">
+          <article class="type">
+            <header>
+              <div class="badge badge-md"><svg><use href="#i-user"/></svg></div>
+              <div><h3>Creator</h3><div class="n">n = 99</div></div>
+            </header>
+            <ol>
+              <li><div class="rank">1</div><div><div class="item-top"><span class="lbl">Kirim portfolio berulang kali</span><span class="val">35<span>(35,4%)</span></span></div><div class="track thin"><div class="fill" style="--v:35.4"></div></div></div></li>
+              <li><div class="rank">2</div><div><div class="item-top"><span class="lbl">Update informasi di banyak tempat</span><span class="val">23<span>(23,2%)</span></span></div><div class="track thin"><div class="fill" style="--v:23.2"></div></div></div></li>
+              <li><div class="rank">3</div><div><div class="item-top"><span class="lbl">Kirim rate card berulang kali</span><span class="val">11<span>(11,1%)</span></span></div><div class="track thin"><div class="fill" style="--v:11.1"></div></div></div></li>
+            </ol>
+          </article>
+
+          <article class="type">
+            <header>
+              <div class="badge badge-md pink"><svg><use href="#i-building"/></svg></div>
+              <div><h3>Brand / UMKM</h3><div class="n">n = 12</div></div>
+            </header>
+            <ol>
+              <li><div class="rank pink">1</div><div><div class="item-top"><span class="lbl">Proses screening manual</span><span class="val">4<span>(33,3%)</span></span></div><div class="track thin pink"><div class="fill" style="--v:33.3"></div></div></div></li>
+              <li><div class="rank pink">2</div><div><div class="item-top"><span class="lbl">Khawatir dengan engagement palsu</span><span class="val">4<span>(33,3%)</span></span></div><div class="track thin pink"><div class="fill" style="--v:33.3"></div></div></div></li>
+              <li><div class="rank pink">3</div><div><div class="item-top"><span class="lbl">Sulit menemukan creator yang sesuai</span><span class="val">2<span>(16,7%)</span></span></div><div class="track thin pink"><div class="fill" style="--v:16.7"></div></div></div></li>
+            </ol>
+          </article>
+
+          <article class="type">
+            <header>
+              <div class="badge badge-md"><svg><use href="#i-users"/></svg></div>
+              <div><h3>Agency</h3><div class="n">n = 26</div></div>
+            </header>
+            <ol>
+              <li><div class="rank">1</div><div><div class="item-top"><span class="lbl">Sulit membandingkan creator</span><span class="val">11<span>(42,3%)</span></span></div><div class="track thin"><div class="fill" style="--v:42.3"></div></div></div></li>
+              <li><div class="rank">2</div><div><div class="item-top"><span class="lbl">Rate tidak jelas</span><span class="val">5<span>(19,2%)</span></span></div><div class="track thin"><div class="fill" style="--v:19.2"></div></div></div></li>
+              <li><div class="rank">3</div><div><div class="item-top"><span class="lbl">Data dan performa tidak konsisten</span><span class="val">4<span>(15,4%)</span></span></div><div class="track thin"><div class="fill" style="--v:15.4"></div></div></div></li>
+            </ol>
+          </article>
+        </div>
+      </div>
+
+      <div class="source">
+        <svg><use href="#i-info"/></svg>
+        <div><b>Sumber:</b> Hasil survei waitlist CariKOL.id, Agustus 2026 (137 email unik). <span class="hl">Persentase dihitung dari total responden (n = 137) dan dari n tiap tipe responden.</span></div>
+      </div>
+    </div>
+
+    <aside class="card meaning">
+      <h2 class="card-title">Apa Artinya?</h2>
+      <div class="items">
+        <div class="mitem">
+          <div class="badge"><svg><use href="#i-user"/></svg></div>
+          <div><h4>Creator</h4><p>Menghabiskan waktu untuk mengirim ulang portfolio dan memperbarui informasi di banyak platform.</p></div>
+        </div>
+        <div class="mitem">
+          <div class="badge pink"><svg><use href="#i-building"/></svg></div>
+          <div><h4>Brand / UMKM</h4><p>Membutuhkan data yang lebih jelas dan sinyal kepercayaan saat mencari creator.</p></div>
+        </div>
+        <div class="mitem">
+          <div class="badge"><svg><use href="#i-users"/></svg></div>
+          <div><h4>Agency</h4><p>Kesulitan membandingkan creator dan mengelola data campaign secara efisien.</p></div>
+        </div>
+      </div>
+    </aside>
+  </section>
+</main>
+</body>
+</html>
