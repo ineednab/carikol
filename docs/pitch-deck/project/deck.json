@@ -1,0 +1,46 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-10-13T09:00:00Z" },
+  "lists": "css",
+  "title": "CariKOL.id — Pitch Deck DSC Season 17",
+  "cover": "cover",
+  "order": [
+    "cover",
+    "overview",
+    "problem",
+    "solution",
+    "market",
+    "model",
+    "traction",
+    "gtm",
+    "impact",
+    "financial",
+    "funding",
+    "team",
+    "roadmap",
+    "closing",
+    "a1-product",
+    "a2-validation",
+    "a3-cases",
+    "a4-legal",
+    "a5-founder",
+    "sources"
+  ],
+  "sections": {
+    "s1": { "description": "Pembuka: CariKOL.id, sistem operasi untuk kampanye kreator.", "start": "cover" },
+    "s2": { "description": "Masalah dan solusi: dari pengalaman Buzzeryok ke satu platform dua sisi.", "start": "overview" },
+    "s3": { "description": "Pasar dan model bisnis: Rp13,1 triliun peluang, tiga sumber pendapatan.", "start": "market" },
+    "s4": { "description": "Bukti dan strategi: traksi, go-to-market, dan dampak.", "start": "traction" },
+    "s5": { "description": "Keuangan dan pendanaan: dari bisnis profitable ke SaaS berulang.", "start": "financial" },
+    "s6": { "description": "Tim dan roadmap menuju akun berbayar.", "start": "team" },
+    "s7": { "description": "Penutup dan permintaan.", "start": "closing" },
+    "s8": { "description": "Lampiran: bukti produk, validasi, studi kasus, legalitas, kredensial, dan sumber data.", "start": "a1-product" }
+  },
+  "faces": {
+    "plus-jakarta-sans": {
+      "family": "Plus Jakarta Sans",
+      "href": "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap"
+    }
+  },
+  "designSystems": []
+}
