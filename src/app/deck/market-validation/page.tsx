@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
-import type { ReactNode } from "react"
 import { FileText, Info } from "lucide-react"
+import { CARD, DeckShell, Eyebrow, PersonaBadge, PERSONA_THEME } from "../_components/DeckUI"
+import { PERSONAS, SURVEY_PERIOD, TOP_PROBLEMS, TOTAL, pct } from "../_lib/survey"
 
 export const metadata: Metadata = {
   title: "Market Validation — CariKOL.id",
@@ -9,127 +10,21 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 }
 
-// ─── Data survei ─────────────────────────────────────────────────────────────
-// Sumber: survei waitlist di landing page (Agustus 2026). Cukup ubah angka di
-// sini — persentase dan panjang bar dihitung otomatis dari `count / n`.
-
-const SURVEY_PERIOD = "Agustus 2026"
-
-type PersonaKey = "creator" | "brand" | "agency"
-type Problem    = { label: string; count: number }
-
-const PERSONAS: {
-  key:      PersonaKey
-  label:    string
-  n:        number
-  problems: Problem[]
-  meaning:  string
-}[] = [
-  {
-    key:   "creator",
-    label: "Creator",
-    n:     99,
-    problems: [
-      { label: "Kirim portfolio berulang kali",     count: 35 },
-      { label: "Update informasi di banyak tempat", count: 23 },
-      { label: "Kirim rate card berulang kali",     count: 11 },
-    ],
-    meaning: "Menghabiskan waktu untuk mengirim ulang portfolio dan memperbarui informasi di banyak platform.",
-  },
-  {
-    key:   "brand",
-    label: "Brand / UMKM",
-    n:     12,
-    problems: [
-      { label: "Proses screening manual",            count: 4 },
-      { label: "Khawatir dengan engagement palsu",   count: 4 },
-      { label: "Sulit menemukan creator yang sesuai", count: 2 },
-    ],
-    meaning: "Membutuhkan data yang lebih jelas dan sinyal kepercayaan saat mencari creator.",
-  },
-  {
-    key:   "agency",
-    label: "Agency",
-    n:     26,
-    problems: [
-      { label: "Sulit membandingkan creator",       count: 11 },
-      { label: "Rate tidak jelas",                  count: 5 },
-      { label: "Data dan performa tidak konsisten", count: 4 },
-    ],
-    meaning: "Kesulitan membandingkan creator dan mengelola data campaign secara efisien.",
-  },
-]
-
-const TOTAL = PERSONAS.reduce((sum, p) => sum + p.n, 0)
-
-const TOP_PROBLEMS: Problem[] = [
-  { label: "Kirim portfolio berulang kali",          count: 35 },
-  { label: "Update informasi di banyak tempat",      count: 23 },
-  { label: "Kirim rate card berulang kali",          count: 15 },
-  { label: "Menjelaskan performa akun berulang kali", count: 12 },
-  { label: "Sulit membandingkan creator",            count: 12 },
-]
-
 const QUOTE = {
   text:   "Aku harus kirim portfolio, rate card, dan statistik yang sama berkali-kali ke brand yang berbeda.",
   author: "Responden Creator",
 }
 
-// ─── Tema per persona ────────────────────────────────────────────────────────
-
-const THEME: Record<PersonaKey, { icon: ReactNode; chip: string; bar: string; track: string; num: string }> = {
-  creator: {
-    icon:  <PersonIcon />,
-    chip:  "bg-[#F1ECFE] text-[#7C3AED]",
-    bar:   "bg-gradient-to-r from-[#6D28D9] to-[#A855F7]",
-    track: "bg-[#EEE9FB]",
-    num:   "bg-[#F4F1FB] text-[#7C3AED]",
-  },
-  brand: {
-    icon:  <BuildingIcon />,
-    chip:  "bg-[#FDECF4] text-[#EC4899]",
-    bar:   "bg-gradient-to-r from-[#DB2777] to-[#F472B6]",
-    track: "bg-[#FCE7F1]",
-    num:   "bg-[#FDF0F6] text-[#DB2777]",
-  },
-  agency: {
-    icon:  <GroupIcon />,
-    chip:  "bg-[#F1ECFE] text-[#7C3AED]",
-    bar:   "bg-gradient-to-r from-[#6D28D9] to-[#A855F7]",
-    track: "bg-[#EEE9FB]",
-    num:   "bg-[#F4F1FB] text-[#7C3AED]",
-  },
-}
-
-const pctFormat = new Intl.NumberFormat("id-ID", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
-
-function pct(count: number, n: number): string {
-  return `${pctFormat.format((count / n) * 100)}%`
-}
-
-const CARD = "rounded-[22px] border border-white/70 bg-white/90 shadow-[0_10px_40px_-12px_rgba(76,29,149,0.14)] backdrop-blur-sm"
-
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function MarketValidationPage() {
   return (
-    <div className="relative min-h-svh overflow-hidden bg-[#FBFAFF] text-[#14112B]">
-      {/* Soft background glows */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -right-40 -top-48 h-[620px] w-[620px] rounded-full bg-[#FBCFE8]/55 blur-[120px]" />
-        <div className="absolute -left-40 top-1/3 h-[520px] w-[520px] rounded-full bg-[#EDE9FE]/70 blur-[120px]" />
-        <div className="absolute -bottom-48 right-0 h-[480px] w-[480px] rounded-full bg-[#FCE7F3]/60 blur-[120px]" />
-      </div>
-
-      <main className="relative mx-auto flex max-w-[1456px] flex-col gap-5 xl:gap-4 px-4 py-8 sm:px-8 sm:py-10 xl:px-[46px] xl:pb-5 xl:pt-8">
-
+    <DeckShell>
         {/* ── Row 1: headline + stats │ quote + overall ──────────────────── */}
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_476px] xl:gap-8">
 
           <section className="flex flex-col">
-            <p className="text-[13px] font-bold uppercase leading-none tracking-[0.2em] text-[#7C3AED]">
-              A2 <span className="mx-1.5">•</span> Market Validation
-            </p>
+            <Eyebrow code="A2">Market Validation</Eyebrow>
 
             <h1 className="mt-4 text-[38px] font-extrabold leading-[1.02] tracking-[-0.035em] sm:text-[48px] xl:text-[54px]">
               {TOTAL} creator, brand, dan agency mengalami{" "}
@@ -161,8 +56,7 @@ export default function MarketValidationPage() {
           </div>
           <ImplicationsCard />
         </div>
-      </main>
-    </div>
+    </DeckShell>
   )
 }
 
@@ -194,9 +88,7 @@ function RespondentStats() {
           key={key}
           className={`flex flex-col items-center text-center ${i < PERSONAS.length - 1 ? "border-r border-[#EEEAF6]" : ""}`}
         >
-          <span className={`flex h-11 w-11 items-center justify-center rounded-full ${THEME[key].chip}`}>
-            <span className="h-5 w-5">{THEME[key].icon}</span>
-          </span>
+          <PersonaBadge persona={key} />
           <span className="mt-2.5 text-[32px] font-extrabold leading-none tracking-[-0.02em]">{n}</span>
           <span className="mt-1.5 text-[15px] leading-snug text-[#3B3852] sm:text-[17px]">{label}</span>
           <span className="text-[15px] leading-snug text-[#6B6880] sm:text-[17px]">({pct(n, TOTAL)})</span>
@@ -248,13 +140,11 @@ function PerPersonaCard() {
       <h2 className="text-[18px] font-bold tracking-[-0.01em]">Masalah Utama per Tipe Responden</h2>
       <div className="mt-3 grid gap-3 md:grid-cols-3 xl:gap-2.5">
         {PERSONAS.map(({ key, label, n, problems }) => {
-          const theme = THEME[key]
+          const theme = PERSONA_THEME[key]
           return (
             <article key={key} className="rounded-2xl border border-[#EEEAF6] bg-white px-3 py-3">
               <header className="flex items-center gap-3.5">
-                <span className={`flex h-10 w-10 items-center justify-center rounded-full ${theme.chip}`}>
-                  <span className="h-5 w-5">{theme.icon}</span>
-                </span>
+                <PersonaBadge persona={key} size="md" />
                 <div>
                   <h3 className="text-[17px] font-bold leading-tight tracking-[-0.01em]">{label}</h3>
                   <p className="text-[13px] text-[#6B6880]">n = {n}</p>
@@ -310,9 +200,7 @@ function ImplicationsCard() {
       <ul className="mt-1 divide-y divide-[#EEEAF6]">
         {PERSONAS.map(({ key, label, meaning }) => (
           <li key={key} className="flex gap-3 py-2 last:pb-0">
-            <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${THEME[key].chip}`}>
-              <span className="h-5 w-5">{THEME[key].icon}</span>
-            </span>
+            <PersonaBadge persona={key} />
             <div>
               <h3 className="text-[15px] font-bold leading-tight">{label}</h3>
               <p className="mt-0.5 text-[13px] leading-[1.4] text-[#3B3852]">{meaning}</p>
@@ -331,37 +219,6 @@ function Bar({ value, fill, track }: { value: number; fill: string; track: strin
     <div className={`h-2 w-full overflow-hidden rounded-full ${track}`}>
       <div className={`h-full rounded-full ${fill}`} style={{ width: `${Math.min(value, 1) * 100}%` }} />
     </div>
-  )
-}
-
-function PersonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-full w-full">
-      <circle cx="12" cy="7.5" r="4" />
-      <path d="M4 19.2c0-3.1 3.6-5.2 8-5.2s8 2.1 8 5.2V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
-    </svg>
-  )
-}
-
-function BuildingIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-full w-full">
-      <path
-        fillRule="evenodd"
-        d="M4 4.5A1.5 1.5 0 0 1 5.5 3h8A1.5 1.5 0 0 1 15 4.5V9h3.5A1.5 1.5 0 0 1 20 10.5V21H4zM7 6h2v2H7zm4 0h2v2h-2zM7 10h2v2H7zm4 0h2v2h-2zm4 2h2v2h-2zM7 14h2v2H7zm4 0h2v2h-2zm4 2h2v2h-2zm-5 2v3h-1.5v-3z"
-      />
-    </svg>
-  )
-}
-
-function GroupIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="h-full w-full">
-      <circle cx="9" cy="8" r="3.4" />
-      <circle cx="16.8" cy="9" r="2.6" />
-      <path d="M2.5 18.4c0-2.7 2.9-4.6 6.5-4.6s6.5 1.9 6.5 4.6V20a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1z" />
-      <path d="M16.6 13.3c2.8.1 4.9 1.7 4.9 3.9V20a1 1 0 0 1-1 1h-3.3v-2.6c0-2-.6-3.7-1.9-5z" />
-    </svg>
   )
 }
 
