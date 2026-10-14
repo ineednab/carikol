@@ -1,0 +1,590 @@
+<title>CariKOL Creator Workspace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: app shell (sidebar + workspace). Workspace = positioning brief on top,
+   ranked creator list on the left, sticky positioning map + fit breakdown on the right. */
+:root {
+  --bg: #F8F7FB;
+  --surface: #FFFFFF;
+  --surface-2: #F3F1F8;
+  --line: #E9E6F0;
+  --fg: #17141F;
+  --muted: #6B6779;
+  --faint: #9C98AA;
+  --accent: #7C3AED;
+  --accent-ink: #5B21B6;
+  --accent-soft: #F1EAFE;
+  --pink: #DB2777;
+  --good: #15803D;
+  --good-soft: #E7F6EC;
+  --warn: #B45309;
+  --warn-soft: #FDF1E1;
+  --bad: #B91C1C;
+  --bad-soft: #FCEBEB;
+  --shadow: 0 1px 2px rgba(23, 20, 31, .04), 0 8px 24px rgba(23, 20, 31, .05);
+  --font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r-lg: 18px;
+  --r-md: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121019; --surface: #1A1724; --surface-2: #221E2E; --line: #2E2A3B;
+    --fg: #F2F0F7; --muted: #A9A4B8; --faint: #7D788D;
+    --accent: #A78BFA; --accent-ink: #C4B5FD; --accent-soft: #2B2342; --pink: #F472B6;
+    --good: #4ADE80; --good-soft: #15291E; --warn: #FBBF24; --warn-soft: #2E2413;
+    --bad: #F87171; --bad-soft: #301A1C;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121019; --surface: #1A1724; --surface-2: #221E2E; --line: #2E2A3B;
+  --fg: #F2F0F7; --muted: #A9A4B8; --faint: #7D788D;
+  --accent: #A78BFA; --accent-ink: #C4B5FD; --accent-soft: #2B2342; --pink: #F472B6;
+  --good: #4ADE80; --good-soft: #15291E; --warn: #FBBF24; --warn-soft: #2E2413;
+  --bad: #F87171; --bad-soft: #301A1C;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.45; }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100%; }
+
+/* Sidebar */
+.side { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; }
+.logo { display: flex; align-items: baseline; gap: 6px; padding: 22px 22px 18px; border-bottom: 1px solid var(--line); }
+.logo b { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.logo b span { color: var(--accent); }
+.logo small { color: var(--faint); font-size: 12px; }
+.nav { padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; }
+.nav h6 { margin: 14px 10px 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+.nav h6:first-child { margin-top: 4px; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; font-weight: 500; }
+.nav a:hover { background: var(--surface-2); color: var(--fg); }
+.nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.nav svg { width: 17px; height: 17px; flex: none; }
+.me { margin-top: auto; border-top: 1px solid var(--line); padding: 14px 18px; display: flex; align-items: center; gap: 10px; }
+.me .av { width: 34px; height: 34px; border-radius: 50%; background: var(--fg); color: var(--bg); display: grid; place-items: center; font-weight: 700; }
+.me p { margin: 0; font-weight: 600; font-size: 13px; }
+.me small { color: var(--faint); font-size: 12px; }
+
+/* Main */
+main { padding-block: 28px 48px; padding-inline: 32px; min-width: 0; }
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.head h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.5px; text-wrap: balance; }
+.head p { margin: 4px 0 0; color: var(--muted); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 9px 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { border-color: var(--faint); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root[data-theme="dark"] .btn.primary, :root[data-theme="dark"] .short[aria-pressed="true"] { color: #17141F; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary, :root:not([data-theme="light"]) .short[aria-pressed="true"] { color: #17141F; } }
+
+/* Brief */
+.brief { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 20px 22px; margin-bottom: 18px; }
+.brief-top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; justify-content: space-between; padding-bottom: 16px; border-bottom: 1px dashed var(--line); margin-bottom: 14px; }
+.brief-top h2 { margin: 0; font-size: 16px; font-weight: 700; }
+.brief-top p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.brand-pick { display: flex; align-items: center; gap: 8px; }
+.brand-pick label { color: var(--muted); font-size: 13px; }
+select { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 8px 32px 8px 12px; font-weight: 600; appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 52%, calc(100% - 11px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+.rows { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px 16px; align-items: center; }
+.rows > .lab { color: var(--muted); font-size: 13px; font-weight: 600; }
+.rows > .lab small { display: block; color: var(--faint); font-weight: 500; font-size: 12px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: var(--muted); }
+.chip:hover { border-color: var(--faint); color: var(--fg); }
+.chip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.sep { width: 1px; height: 20px; background: var(--line); margin: 0 6px; align-self: center; }
+.budget { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.budget input { width: min(320px, 100%); accent-color: var(--accent); }
+.budget output { font-weight: 700; min-width: 120px; }
+
+/* Workspace grid */
+.ws { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); min-width: 0; }
+
+.list-head { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.tabs { display: flex; gap: 4px; background: var(--surface-2); padding: 4px; border-radius: 12px; flex-wrap: wrap; }
+.tab { border: 0; background: transparent; padding: 6px 12px; border-radius: 9px; font-weight: 500; color: var(--muted); font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
+.tab .n { background: var(--line); color: var(--muted); border-radius: 999px; padding: 0 7px; font-size: 11px; font-weight: 700; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.tab[aria-selected="true"] .n { background: var(--accent-soft); color: var(--accent-ink); }
+.tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.search { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 7px 12px; background: var(--surface); }
+.search input { border: 0; outline: 0; background: transparent; width: 180px; min-width: 0; }
+.search svg { width: 15px; height: 15px; color: var(--faint); flex: none; }
+
+.summary { display: flex; gap: 18px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--surface-2); font-size: 13px; color: var(--muted); }
+.summary b { color: var(--fg); }
+
+.row { display: grid; grid-template-columns: 64px minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, .8fr) minmax(0, .8fr) auto; gap: 8px 16px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.row:last-child { border-bottom: 0; }
+.row:hover { background: var(--surface-2); }
+.row[aria-current="true"] { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.fit { display: grid; place-items: center; gap: 2px; grid-row: span 2; }
+.ring { --p: 0; --c: var(--accent); width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--c) calc(var(--p) * 1%), var(--line) 0); }
+.ring span { width: 42px; height: 42px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+.row:hover .ring span { background: var(--surface-2); }
+.row[aria-current="true"] .ring span { background: var(--accent-soft); }
+.fit small { font-size: 11px; font-weight: 600; color: var(--c); white-space: nowrap; }
+.who { display: flex; gap: 12px; align-items: center; min-width: 0; }
+.ava { width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.who .nm { font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.who .nm svg { width: 14px; height: 14px; color: var(--accent); }
+.who .meta { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.why { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.tag.ok { background: var(--good-soft); color: var(--good); }
+.tag.mid { background: var(--warn-soft); color: var(--warn); }
+.tag.no { background: var(--bad-soft); color: var(--bad); }
+.tag.persona { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.cell .k { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.cell .v { font-weight: 600; }
+.cell .s { color: var(--muted); font-size: 12px; }
+.plats { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.pl { white-space: nowrap; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--muted); }
+.short { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 7px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.short[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.empty { padding: 40px 16px; text-align: center; color: var(--muted); }
+
+/* Right panel */
+.side-r { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: flex; flex-direction: column; gap: 14px; }
+.map { padding: 16px 16px 12px; }
+.map h3, .detail h3 { margin: 0; font-size: 14px; font-weight: 700; }
+.map p.sub { margin: 2px 0 10px; color: var(--muted); font-size: 12px; }
+.map svg { width: 100%; height: auto; display: block; }
+.map .axis { fill: var(--faint); font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+.map .grid { stroke: var(--line); }
+.map .zone { fill: var(--accent); opacity: .08; }
+.map .dot { cursor: pointer; transition: r .15s; }
+.map .dot-label { fill: var(--fg); font-size: 10.5px; font-weight: 700; }
+.map .brand-label { fill: var(--accent-ink); font-size: 10.5px; font-weight: 800; }
+.legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--muted); margin-top: 6px; }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+.detail { padding: 16px; }
+.d-who { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+.d-who .ava { width: 48px; height: 48px; font-size: 16px; }
+.d-who p { margin: 0; }
+.d-who .nm { font-weight: 800; font-size: 15px; }
+.d-who .meta { color: var(--muted); font-size: 12px; }
+.d-score { margin-left: auto; text-align: right; }
+.d-score b { font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
+.d-score small { display: block; font-size: 11px; font-weight: 600; }
+.bars { display: flex; flex-direction: column; gap: 9px; margin: 6px 0 14px; }
+.bar { display: grid; grid-template-columns: 92px minmax(0, 1fr) 44px; gap: 10px; align-items: center; font-size: 12px; }
+.bar .t { height: 7px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.bar .t i { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+.bar .lab { color: var(--muted); }
+.bar .val { text-align: right; font-weight: 700; }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.kv div { background: var(--surface-2); border-radius: 10px; padding: 9px 11px; }
+.kv .k { font-size: 11px; color: var(--faint); font-weight: 600; }
+.kv .v { font-weight: 700; }
+.notes { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+.notes li { display: flex; gap: 8px; align-items: flex-start; }
+.notes li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex: none; background: var(--c, var(--good)); }
+.d-act { display: flex; gap: 8px; margin-top: 14px; }
+.d-act .btn { flex: 1; justify-content: center; }
+.hint { font-size: 11px; color: var(--faint); text-align: center; margin-top: 10px; }
+
+/* Responsive */
+@media (max-width: 1240px) {
+  .ws { grid-template-columns: minmax(0, 1fr); }
+  .side-r { position: static; display: grid; grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 1020px) {
+  .row { grid-template-columns: 64px minmax(0, 1fr) auto; }
+  .row .cell { display: none; }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .side { position: static; height: auto; flex-direction: row; align-items: center; justify-content: space-between; border-right: 0; border-bottom: 1px solid var(--line); }
+  .side .nav, .side .me { display: none; }
+  .logo { border-bottom: 0; padding: 14px 16px; }
+  main { padding-inline: 16px; padding-block: 20px 40px; }
+  .rows { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .rows > .lab { margin-top: 8px; }
+  .side-r { grid-template-columns: minmax(0, 1fr); }
+  .search input { width: 120px; }
+}
+@media (max-width: 480px) {
+  .row { grid-template-columns: 56px minmax(0, 1fr); }
+  .row .short { grid-column: 2; justify-self: start; }
+  .brief { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <aside class="side">
+    <div class="logo"><b>Cari<span>KOL</span></b><small>by Buzzeryok</small></div>
+    <nav class="nav" aria-label="Navigasi utama">
+      <h6>Workspace</h6>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M18 6a8 8 0 0 1 0 12"/></svg>Campaigns</a>
+      <a href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>Creator Workspace</a>
+      <h6>Kelola</h6>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16"/><path d="M15 9h4a1 1 0 0 1 1 1v11"/><path d="M8 8h3M8 12h3M8 16h3"/><path d="M2 21h20"/></svg>Brands</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Verifikasi Akun</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M5 21h14"/><path d="m5 8-3 7a3.5 3.5 0 0 0 6 0L5 8Zm14 0-3 7a3.5 3.5 0 0 0 6 0l-3-7Z"/><path d="M5 8h14"/></svg>Sanggahan</a>
+    </nav>
+    <div class="me"><div class="av">N</div><div><p>Nabnab Rahmadani</p><small>Campaign Manager</small></div></div>
+  </aside>
+
+  <main>
+    <div class="head">
+      <div>
+        <h1>Creator Workspace</h1>
+        <p>Cari kreator yang sesuai positioning brand, bukan cuma yang followers-nya paling banyak.</p>
+      </div>
+      <div class="actions">
+        <button class="btn" type="button" id="exportBtn">Export shortlist</button>
+        <button class="btn primary" type="button">+ Tambah creator</button>
+      </div>
+    </div>
+
+    <section class="brief" aria-labelledby="briefTitle">
+      <div class="brief-top">
+        <div>
+          <h2 id="briefTitle">Positioning brand</h2>
+          <p>Atur karakter dan target brand. Skor kecocokan setiap kreator dihitung ulang otomatis.</p>
+        </div>
+        <div class="brand-pick">
+          <label for="brandSel">Brief untuk</label>
+          <select id="brandSel"></select>
+        </div>
+      </div>
+      <div class="rows">
+        <div class="lab">Karakter brand<small>pilih maks. 2</small></div>
+        <div class="chips" id="toneChips"></div>
+        <div class="lab">Kategori</div>
+        <div class="chips" id="catChips"></div>
+        <div class="lab">Target audiens</div>
+        <div class="chips"><span id="ageChips" class="chips"></span><span class="sep" aria-hidden="true"></span><span id="genderChips" class="chips"></span></div>
+        <div class="lab">Platform</div>
+        <div class="chips" id="platChips"></div>
+        <div class="lab"><label for="budget">Budget per konten</label></div>
+        <div class="budget"><input type="range" id="budget" min="0.5" max="10" step="0.5"><output id="budgetOut" class="num" for="budget"></output></div>
+      </div>
+    </section>
+
+    <div class="ws">
+      <section class="panel" aria-label="Daftar kreator">
+        <div class="list-head">
+          <div class="tabs" role="tablist" id="tabs"></div>
+          <div class="tools">
+            <label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Cari nama, kota, niche…" aria-label="Cari kreator"></label>
+            <select id="sort" aria-label="Urutkan">
+              <option value="fit">Paling cocok</option>
+              <option value="er">Engagement tertinggi</option>
+              <option value="rate">Rate termurah</option>
+              <option value="trust">Trust score</option>
+            </select>
+          </div>
+        </div>
+        <div class="summary" id="summary"></div>
+        <div id="list"></div>
+      </section>
+
+      <div class="side-r">
+        <section class="panel map" aria-labelledby="mapTitle">
+          <h3 id="mapTitle">Peta positioning</h3>
+          <p class="sub">Posisi brand dibanding kreator. Makin dekat ke lingkaran, makin selaras karakternya.</p>
+          <svg id="mapSvg" viewBox="0 0 320 300" role="img" aria-label="Peta positioning kreator terhadap brand"></svg>
+          <div class="legend"><span><i style="background:var(--good)"></i>Sangat cocok</span><span><i style="background:var(--accent)"></i>Cocok</span><span><i style="background:var(--warn)"></i>Perlu dicek</span><span><i style="background:var(--faint)"></i>Kurang cocok</span></div>
+        </section>
+        <section class="panel detail" id="detail" aria-live="polite"></section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Data contoh untuk mockup — bukan data kreator asli.
+const TONES = {
+  Premium:    { x: 88, y: 55 },
+  Terjangkau: { x: 14, y: 45 },
+  Edukatif:   { x: 55, y: 88 },
+  Playful:    { x: 42, y: 12 },
+  Aspiratif:  { x: 76, y: 72 },
+  Relatable:  { x: 28, y: 32 },
+};
+const CATS = ['Skincare', 'Makeup', 'Body care', 'Fashion', 'Food', 'Lifestyle'];
+const AGES = ['18–24', '25–34', '35+'];
+const GENDERS = ['Mayoritas wanita', 'Seimbang', 'Mayoritas pria'];
+const PLATS = ['TikTok', 'Instagram', 'YouTube'];
+
+const BRANDS = {
+  'Emina Cosmetics':      { tones: ['Playful', 'Relatable'], cats: ['Makeup', 'Skincare'], age: '18–24', gender: 'Mayoritas wanita', plats: ['TikTok', 'Instagram'], budget: 2 },
+  'SOMETHINC':            { tones: ['Edukatif', 'Aspiratif'], cats: ['Skincare'], age: '18–24', gender: 'Mayoritas wanita', plats: ['TikTok'], budget: 4 },
+  'Wardah Cosmetics':     { tones: ['Relatable', 'Edukatif'], cats: ['Skincare', 'Makeup'], age: '25–34', gender: 'Mayoritas wanita', plats: ['Instagram', 'YouTube'], budget: 5 },
+  'Scarlett Whitening':   { tones: ['Aspiratif', 'Playful'], cats: ['Body care', 'Skincare'], age: '18–24', gender: 'Mayoritas wanita', plats: ['TikTok', 'Instagram'], budget: 3 },
+};
+
+const CREATORS = [
+  { id: 1, name: 'Tika Wulandari', handle: 'tikawulandari', city: 'Surabaya', cats: ['Food', 'Lifestyle'], plats: { TikTok: '2,3 jt', Instagram: '850 rb', YouTube: '320 rb' }, x: 34, y: 22, age: '18–24', female: 72, er: 4.8, views: '320 rb', rate: 3, rateFor: 'TikTok video', trust: 91, persona: ['Kocak', 'Kuliner lokal'], recent: ['Mie Gacoan', 'Chatime'] },
+  { id: 2, name: 'Aurel Santika', handle: 'aurelsantika', city: 'Jakarta', cats: ['Makeup', 'Skincare'], plats: { TikTok: '1,2 jt', Instagram: '340 rb' }, x: 70, y: 66, age: '18–24', female: 78, er: 3.2, views: '180 rb', rate: 1.5, rateFor: 'IG Photo', trust: 88, persona: ['Tutorial', 'Clean look'], recent: ['Make Over', 'Somethinc'] },
+  { id: 3, name: 'Karina Lestari', handle: 'karinalestariofficial', city: 'Yogyakarta', cats: ['Fashion', 'Makeup'], plats: { TikTok: '690 rb', Instagram: '420 rb' }, x: 38, y: 20, age: '18–24', female: 70, er: 2.1, views: '95 rb', rate: 1.2, rateFor: 'TikTok video', trust: 76, persona: ['OOTD', 'Ceria'], recent: ['Erigo', 'Emina'] },
+  { id: 4, name: 'Nadia Putri', handle: 'nadiaputriska', city: 'Jakarta', cats: ['Skincare'], plats: { TikTok: '210 rb', Instagram: '180 rb', YouTube: '35 rb' }, x: 58, y: 86, age: '18–24', female: 75, er: 3.8, views: '28 rb', rate: 0.75, rateFor: 'IG Photo', trust: 94, persona: ['Review ingredient', 'Jujur'], recent: ['Avoskin', 'Garnier'] },
+  { id: 5, name: 'Salsa Amelia', handle: 'salsamelia', city: 'Medan', cats: ['Makeup'], plats: { TikTok: '480 rb', Instagram: '150 rb' }, x: 30, y: 28, age: '18–24', female: 81, er: 6.1, views: '140 rb', rate: 1.8, rateFor: 'TikTok video', trust: 83, persona: ['GRWM', 'Relatable'], recent: ['Pixy', 'Emina'] },
+  { id: 6, name: 'Dinda Maharani', handle: 'dindamaharani', city: 'Makassar', cats: ['Skincare', 'Body care'], plats: { Instagram: '260 rb', YouTube: '90 rb' }, x: 46, y: 78, age: '25–34', female: 84, er: 2.9, views: '60 rb', rate: 2.5, rateFor: 'YouTube review', trust: 90, persona: ['Edukatif', 'Kulit sensitif'], recent: ['Wardah', 'Cetaphil'] },
+  { id: 7, name: 'Putri Ayuningtyas', handle: 'putriayu.id', city: 'Denpasar', cats: ['Lifestyle', 'Fashion'], plats: { Instagram: '910 rb', TikTok: '380 rb' }, x: 86, y: 58, age: '25–34', female: 66, er: 1.9, views: '210 rb', rate: 6, rateFor: 'IG Reels', trust: 87, persona: ['Travel', 'Estetik'], recent: ['Sejauh Mata Memandang', 'Bvlgari'] },
+  { id: 8, name: 'Maya Kirana', handle: 'mayakirana', city: 'Semarang', cats: ['Makeup', 'Body care'], plats: { TikTok: '1,6 jt', Instagram: '520 rb' }, x: 64, y: 40, age: '18–24', female: 83, er: 4.2, views: '410 rb', rate: 4, rateFor: 'TikTok video', trust: 72, persona: ['Glam', 'Before–after'], recent: ['Scarlett', 'Y.O.U'] },
+  { id: 9, name: 'Bella Oktaviani', handle: 'bellaokta', city: 'Surabaya', cats: ['Fashion', 'Lifestyle'], plats: { TikTok: '330 rb', Instagram: '210 rb' }, x: 22, y: 38, age: '18–24', female: 62, er: 5.4, views: '75 rb', rate: 0.9, rateFor: 'TikTok video', trust: 80, persona: ['Haul murah', 'Daily vlog'], recent: ['Shopee', 'Matahari'] },
+  { id: 10, name: 'Fajar Nugroho', handle: 'fajarngrh', city: 'Malang', cats: ['Skincare'], plats: { TikTok: '540 rb', YouTube: '120 rb' }, x: 50, y: 82, age: '18–24', female: 31, er: 3.5, views: '90 rb', rate: 2, rateFor: 'TikTok video', trust: 89, persona: ['Skincare pria', 'Edukatif'], recent: ['Kahf', 'Somethinc'] },
+  { id: 11, name: 'Rizky Firmansyah', handle: 'rizkyfirmansyah', city: 'Jakarta', cats: ['Food'], plats: { TikTok: '2,8 jt', YouTube: '1,1 jt' }, x: 18, y: 16, age: '25–34', female: 44, er: 2.4, views: '600 rb', rate: 8, rateFor: 'YouTube integrasi', trust: 85, persona: ['Mukbang', 'Kocak'], recent: ['Indomie', 'GoFood'] },
+  { id: 12, name: 'Clara Wijaya', handle: 'clarawijaya', city: 'Bandung', cats: ['Skincare', 'Makeup'], plats: { Instagram: '640 rb', TikTok: '290 rb' }, x: 80, y: 74, age: '25–34', female: 88, er: 2.7, views: '120 rb', rate: 5, rateFor: 'IG Reels', trust: 93, persona: ['Luxury skincare', 'Ritual'], recent: ['Estée Lauder', 'Laneige'] },
+];
+
+const AVA = ['#EDE4FF', '#FCE4F1', '#E1F3EA', '#FFF0DB', '#E2EEFF', '#F3E8FF'];
+const AVA_INK = ['#5B21B6', '#9D174D', '#166534', '#92400E', '#1E40AF', '#6B21A8'];
+
+let brief = structuredClone(BRANDS['Emina Cosmetics']);
+let state = { brand: 'Emina Cosmetics', tab: 'all', q: '', sort: 'fit', selected: null, shortlist: new Set([2, 5]), invited: new Set([4]) };
+
+const $ = (s) => document.querySelector(s);
+const rupiah = (jt) => jt < 1 ? `Rp${Math.round(jt * 1000)} rb` : `Rp${String(jt).replace('.', ',')} jt`;
+const initials = (n) => n.split(' ').map(w => w[0]).slice(0, 2).join('');
+
+function brandPoint() {
+  const t = brief.tones.length ? brief.tones : Object.keys(TONES);
+  return { x: t.reduce((a, k) => a + TONES[k].x, 0) / t.length, y: t.reduce((a, k) => a + TONES[k].y, 0) / t.length };
+}
+
+function score(c) {
+  const why = [];
+  const parts = {};
+  // Kategori — 30
+  const catHit = !brief.cats.length || c.cats.some(k => brief.cats.includes(k));
+  parts.Kategori = [catHit ? 30 : 0, 30];
+  why.push(catHit ? ['ok', `Niche ${c.cats.filter(k => brief.cats.includes(k)).join(', ') || c.cats[0]}`] : ['no', `Niche ${c.cats.join(', ')}`]);
+  // Karakter — 25 (jarak di peta positioning)
+  const b = brandPoint();
+  const d = Math.hypot(c.x - b.x, c.y - b.y);
+  const tone = Math.round(25 * Math.max(0, 1 - d / 70));
+  parts.Karakter = [tone, 25];
+  why.push(tone >= 18 ? ['ok', 'Karakter selaras'] : tone >= 10 ? ['mid', 'Karakter agak berbeda'] : ['no', 'Karakter jauh dari brand']);
+  // Audiens — 25 (usia 15 + gender 10)
+  const ai = AGES.indexOf(c.age), bi = AGES.indexOf(brief.age);
+  const age = ai === bi ? 15 : Math.abs(ai - bi) === 1 ? 7 : 0;
+  const g = brief.gender === 'Mayoritas wanita' ? c.female >= 65 : brief.gender === 'Mayoritas pria' ? c.female <= 35 : c.female > 35 && c.female < 65;
+  const gen = g ? 10 : 3;
+  parts.Audiens = [age + gen, 25];
+  why.push(age + gen >= 22 ? ['ok', `Audiens ${c.age}, ${c.female}% wanita`] : ['mid', `Audiens ${c.age}, ${c.female}% wanita`]);
+  // Budget — 10
+  const bud = c.rate <= brief.budget ? 10 : c.rate <= brief.budget * 1.3 ? 5 : 0;
+  parts.Budget = [bud, 10];
+  why.push(bud === 10 ? ['ok', 'Masuk budget'] : bud === 5 ? ['mid', 'Sedikit di atas budget'] : ['no', 'Di atas budget']);
+  // Platform — 10
+  const platHit = !brief.plats.length || brief.plats.some(p => c.plats[p]);
+  parts.Platform = [platHit ? 10 : 0, 10];
+  if (!platHit) why.push(['no', `Tidak aktif di ${brief.plats.join('/')}`]);
+  const total = Object.values(parts).reduce((a, [v]) => a + v, 0);
+  return { total, parts, why };
+}
+
+function band(s) {
+  if (s >= 80) return { label: 'Sangat cocok', c: 'var(--good)' };
+  if (s >= 65) return { label: 'Cocok', c: 'var(--accent)' };
+  if (s >= 50) return { label: 'Perlu dicek', c: 'var(--warn)' };
+  return { label: 'Kurang cocok', c: 'var(--faint)' };
+}
+
+function chipGroup(el, opts, key, multi, max) {
+  el.innerHTML = '';
+  opts.forEach(o => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = o;
+    const on = multi ? brief[key].includes(o) : brief[key] === o;
+    b.setAttribute('aria-pressed', on);
+    b.onclick = () => {
+      if (multi) {
+        const arr = brief[key];
+        if (arr.includes(o)) arr.splice(arr.indexOf(o), 1);
+        else { arr.push(o); if (max && arr.length > max) arr.shift(); }
+      } else brief[key] = o;
+      state.brand = 'Custom';
+      renderBrief(); render();
+    };
+    el.appendChild(b);
+  });
+}
+
+function renderBrief() {
+  const sel = $('#brandSel');
+  sel.innerHTML = [...Object.keys(BRANDS), 'Custom'].map(n => `<option ${n === state.brand ? 'selected' : ''}>${n}</option>`).join('');
+  chipGroup($('#toneChips'), Object.keys(TONES), 'tones', true, 2);
+  chipGroup($('#catChips'), CATS, 'cats', true);
+  chipGroup($('#ageChips'), AGES, 'age', false);
+  chipGroup($('#genderChips'), GENDERS, 'gender', false);
+  chipGroup($('#platChips'), PLATS, 'plats', true);
+  $('#budget').value = brief.budget;
+  $('#budgetOut').textContent = `maks. ${rupiah(brief.budget)}`;
+}
+
+function scored() {
+  return CREATORS.map(c => ({ ...c, s: score(c) }));
+}
+
+function visible(all) {
+  let list = all;
+  if (state.tab === 'short') list = list.filter(c => state.shortlist.has(c.id));
+  if (state.tab === 'invited') list = list.filter(c => state.invited.has(c.id));
+  if (state.tab === 'match') list = list.filter(c => c.s.total >= 70);
+  const q = state.q.trim().toLowerCase();
+  if (q) list = list.filter(c => [c.name, c.handle, c.city, ...c.cats, ...c.persona].join(' ').toLowerCase().includes(q));
+  const by = { fit: (a, b) => b.s.total - a.s.total, er: (a, b) => b.er - a.er, rate: (a, b) => a.rate - b.rate, trust: (a, b) => b.trust - a.trust };
+  return [...list].sort(by[state.sort]);
+}
+
+function avatar(c, cls = 'ava') {
+  const i = c.id % AVA.length;
+  return `<div class="${cls}" style="background:${AVA[i]};color:${AVA_INK[i]}" aria-hidden="true">${initials(c.name)}</div>`;
+}
+
+const verified = '<svg viewBox="0 0 24 24" fill="currentColor" aria-label="Terverifikasi"><path d="M12 2 9.5 4.2 6.2 4l-.9 3.2L2.5 9l1.3 3-1.3 3 2.8 1.8.9 3.2 3.3-.2L12 22l2.5-2.2 3.3.2.9-3.2 2.8-1.8-1.3-3 1.3-3-2.8-1.8-.9-3.2-3.3.2L12 2Zm-1.2 13.6-3.4-3.4 1.4-1.4 2 2 4.6-4.6 1.4 1.4-6 6Z"/></svg>';
+
+function render() {
+  const all = scored();
+  const list = visible(all);
+  const strong = all.filter(c => c.s.total >= 70).length;
+
+  $('#tabs').innerHTML = [
+    ['all', 'Semua', all.length], ['match', 'Cocok ≥70', strong], ['short', 'Shortlist', state.shortlist.size], ['invited', 'Diajak', state.invited.size],
+  ].map(([k, l, n]) => `<button class="tab" role="tab" aria-selected="${state.tab === k}" data-tab="${k}">${l}<span class="n num">${n}</span></button>`).join('');
+  $('#tabs').querySelectorAll('.tab').forEach(t => t.onclick = () => { state.tab = t.dataset.tab; render(); });
+
+  const avgEr = (all.filter(c => c.s.total >= 70).reduce((a, c) => a + c.er, 0) / Math.max(1, strong)).toFixed(1).replace('.', ',');
+  const inBudget = all.filter(c => c.s.total >= 70 && c.rate <= brief.budget).length;
+  $('#summary').innerHTML = `<span><b class="num">${strong}</b> dari ${all.length} kreator cocok dengan positioning <b>${state.brand}</b></span><span><b class="num">${inBudget}</b> masuk budget</span><span>Rata-rata ER kreator cocok <b class="num">${avgEr}%</b></span>`;
+
+  if (!list.length) {
+    $('#list').innerHTML = `<div class="empty">Belum ada kreator di sini. Longgarkan karakter atau budget di positioning brand.</div>`;
+  } else {
+    $('#list').innerHTML = list.map(c => {
+      const bd = band(c.s.total);
+      const why = c.s.why.slice(0, 4).map(([k, t]) => `<span class="tag ${k}">${k === 'ok' ? '✓ ' : k === 'no' ? '✕ ' : '! '}${t}</span>`).join('');
+      const plats = Object.keys(c.plats).map(p => `<span class="pl">${p === 'Instagram' ? 'IG' : p === 'YouTube' ? 'YT' : 'TT'} ${c.plats[p]}</span>`).join('');
+      return `<div class="row" data-id="${c.id}" aria-current="${state.selected === c.id}" tabindex="0">
+        <div class="fit" style="--c:${bd.c}"><div class="ring" style="--p:${c.s.total};--c:${bd.c}"><span class="num">${c.s.total}</span></div><small>${bd.label}</small></div>
+        <div style="min-width:0">
+          <div class="who">${avatar(c)}<div style="min-width:0"><div class="nm">${c.name} ${c.trust >= 85 ? verified : ''}</div><div class="meta">@${c.handle} · ${c.city} · ${c.persona.join(' · ')}</div></div></div>
+        </div>
+        <div class="cell"><div class="k">Audiens</div><div class="v num">${c.age} · ${c.female}% wanita</div><div class="plats">${plats}</div></div>
+        <div class="cell"><div class="k">Performa</div><div class="v num">ER ${String(c.er).replace('.', ',')}%</div><div class="s num">${c.views} avg. views</div></div>
+        <div class="cell"><div class="k">Rate mulai</div><div class="v num">${rupiah(c.rate)}</div><div class="s">${c.rateFor}</div></div>
+        <button class="short" type="button" aria-pressed="${state.shortlist.has(c.id)}" data-short="${c.id}">${state.shortlist.has(c.id) ? '✓ Shortlist' : '+ Shortlist'}</button>
+        <div class="why">${why}</div>
+      </div>`;
+    }).join('');
+  }
+
+  $('#list').querySelectorAll('.row').forEach(r => {
+    const pick = () => { state.selected = +r.dataset.id; render(); };
+    r.onclick = (e) => { if (!e.target.closest('[data-short]')) pick(); };
+    r.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
+  });
+  $('#list').querySelectorAll('[data-short]').forEach(b => b.onclick = () => toggleShort(+b.dataset.short));
+
+  if (!state.selected || !all.find(c => c.id === state.selected)) state.selected = [...all].sort((a, b) => b.s.total - a.s.total)[0].id;
+  if (!$('#list').querySelector('[aria-current="true"]')) {
+    const r = $('#list').querySelector(`[data-id="${state.selected}"]`); if (r) r.setAttribute('aria-current', 'true');
+  }
+  renderMap(all);
+  renderDetail(all.find(c => c.id === state.selected));
+}
+
+function toggleShort(id) {
+  state.shortlist.has(id) ? state.shortlist.delete(id) : state.shortlist.add(id);
+  render();
+}
+
+function renderMap(all) {
+  const P = 30, W = 320, H = 300, S = (v) => P + v / 100 * (W - 2 * P), T = (v) => H - P - v / 100 * (H - 2 * P);
+  const b = brandPoint();
+  const bx = S(b.x), by = T(b.y);
+  const r70 = 70 * (W - 2 * P) / 100 * 0.28; // radius where karakter score stays ≥ 18/25
+  let svg = `
+    <line class="grid" x1="${W / 2}" y1="${P - 6}" x2="${W / 2}" y2="${H - P + 6}" stroke-dasharray="3 4"/>
+    <line class="grid" x1="${P - 6}" y1="${H / 2}" x2="${W - P + 6}" y2="${H / 2}" stroke-dasharray="3 4"/>
+    <rect class="grid" x="${P}" y="${P}" width="${W - 2 * P}" height="${H - 2 * P}" fill="none" rx="10"/>
+    <text class="axis" x="${W / 2}" y="${P - 12}" text-anchor="middle">EDUKATIF</text>
+    <text class="axis" x="${W / 2}" y="${H - P + 20}" text-anchor="middle">HIBURAN</text>
+    <text class="axis" x="${P - 12}" y="${H / 2}" text-anchor="middle" transform="rotate(-90 ${P - 12} ${H / 2})">TERJANGKAU</text>
+    <text class="axis" x="${W - P + 12}" y="${H / 2}" text-anchor="middle" transform="rotate(90 ${W - P + 12} ${H / 2})">PREMIUM</text>
+    <circle class="zone" cx="${bx}" cy="${by}" r="${r70}"/>
+    <circle cx="${bx}" cy="${by}" r="${r70}" fill="none" stroke="var(--accent)" stroke-dasharray="4 4" stroke-width="1.2"/>`;
+  const sel = all.find(c => c.id === state.selected);
+  all.forEach(c => {
+    const bd = band(c.s.total), isSel = c.id === state.selected;
+    svg += `<circle class="dot" data-id="${c.id}" cx="${S(c.x)}" cy="${T(c.y)}" r="${isSel ? 8 : 5.5}" fill="${bd.c}" stroke="var(--surface)" stroke-width="2" tabindex="0"><title>${c.name} — ${c.s.total}</title></circle>`;
+  });
+  if (sel) {
+    const sx = S(sel.x), sy = T(sel.y), right = sx < W - 110;
+    svg += `<line x1="${bx}" y1="${by}" x2="${sx}" y2="${sy}" stroke="var(--faint)" stroke-width="1" stroke-dasharray="2 3"/>`;
+    svg += `<text class="dot-label" x="${sx + (right ? 12 : -12)}" y="${sy + 4}" text-anchor="${right ? 'start' : 'end'}">${sel.name.split(' ')[0]}</text>`;
+  }
+  svg += `<g><rect x="${bx - 7}" y="${by - 7}" width="14" height="14" rx="3" fill="var(--accent)" transform="rotate(45 ${bx} ${by})"/>
+    <text class="brand-label" x="${bx}" y="${by - 14}" text-anchor="middle">${state.brand === 'Custom' ? 'Brief kamu' : state.brand.split(' ')[0]}</text></g>`;
+  const el = $('#mapSvg');
+  el.innerHTML = svg;
+  el.querySelectorAll('.dot').forEach(d => {
+    const pick = () => { state.selected = +d.dataset.id; render(); };
+    d.addEventListener('click', pick);
+    d.addEventListener('keydown', e => { if (e.key === 'Enter') pick(); });
+  });
+}
+
+function renderDetail(c) {
+  if (!c) { $('#detail').innerHTML = ''; return; }
+  const bd = band(c.s.total);
+  const bars = Object.entries(c.s.parts).map(([k, [v, m]]) =>
+    `<div class="bar"><span class="lab">${k}</span><span class="t"><i style="width:${v / m * 100}%;background:${v / m >= .8 ? 'var(--good)' : v / m >= .4 ? 'var(--accent)' : 'var(--warn)'}"></i></span><span class="val num">${v}/${m}</span></div>`).join('');
+  const notes = c.s.why.map(([k, t]) => `<li style="--c:${k === 'ok' ? 'var(--good)' : k === 'mid' ? 'var(--warn)' : 'var(--bad)'}">${t}</li>`).join('');
+  $('#detail').innerHTML = `
+    <div class="d-who">${avatar(c)}<div style="min-width:0"><p class="nm">${c.name}</p><p class="meta">@${c.handle} · ${c.city}</p></div>
+      <div class="d-score" style="color:${bd.c}"><b class="num">${c.s.total}</b><small>${bd.label}</small></div></div>
+    <h3>Kenapa skornya segini</h3>
+    <div class="bars">${bars}</div>
+    <ul class="notes">${notes}</ul>
+    <div class="kv" style="margin-top:12px">
+      <div><div class="k">Rate mulai</div><div class="v num">${rupiah(c.rate)}</div></div>
+      <div><div class="k">Trust score</div><div class="v num">${c.trust}/100</div></div>
+      <div><div class="k">Engagement</div><div class="v num">${String(c.er).replace('.', ',')}%</div></div>
+      <div><div class="k">Pernah dengan</div><div class="v">${c.recent.join(', ')}</div></div>
+    </div>
+    <div class="d-act">
+      <button class="btn" type="button">Lihat profil</button>
+      <button class="btn primary" type="button" data-short-d="${c.id}">${state.shortlist.has(c.id) ? '✓ Di shortlist' : '+ Shortlist'}</button>
+    </div>
+    <p class="hint">Data kreator di halaman ini adalah contoh.</p>`;
+  $('#detail').querySelector('[data-short-d]').onclick = () => toggleShort(c.id);
+}
+
+$('#brandSel').onchange = (e) => {
+  state.brand = e.target.value;
+  if (BRANDS[state.brand]) brief = structuredClone(BRANDS[state.brand]);
+  state.selected = null;
+  renderBrief(); render();
+};
+$('#budget').oninput = (e) => { brief.budget = +e.target.value; state.brand = 'Custom'; $('#brandSel').value = 'Custom'; $('#budgetOut').textContent = `maks. ${rupiah(brief.budget)}`; render(); };
+$('#q').oninput = (e) => { state.q = e.target.value; render(); };
+$('#sort').onchange = (e) => { state.sort = e.target.value; render(); };
+$('#exportBtn').onclick = (e) => { const b = e.currentTarget; b.textContent = `${state.shortlist.size} kreator siap di-export`; setTimeout(() => b.textContent = 'Export shortlist', 2000); };
+
+renderBrief();
+render();
+</script>
