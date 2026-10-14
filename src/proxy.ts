@@ -50,7 +50,8 @@ export async function proxy(request: NextRequest) {
     pathname === "/privacy" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/k/") ||
-    pathname.startsWith("/cek")
+    pathname.startsWith("/cek") ||
+    pathname.startsWith("/deck/")
 
   if (!user && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url))
