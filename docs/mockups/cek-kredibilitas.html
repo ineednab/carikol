@@ -1,0 +1,321 @@
+<title>CariKOL Cek Kredibilitas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: app shell. Search bar on top; result = score card + 4 pillars, then growth chart + audience/signals. */
+:root {
+  --bg: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-2: #F6F5F9;
+  --line: #E9E6F0;
+  --fg: #17141F;
+  --muted: #6B6779;
+  --faint: #9C98AA;
+  --accent: #7C3AED;
+  --accent-ink: #5B21B6;
+  --accent-soft: #F1EAFE;
+  --good: #15803D;
+  --good-soft: #E7F6EC;
+  --warn: #B45309;
+  --warn-soft: #FDF1E1;
+  --bad: #B91C1C;
+  --bad-soft: #FCEBEB;
+  --font: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r-lg: 18px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.45; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.app { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100%; }
+.side { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; }
+.logo { display: flex; align-items: baseline; gap: 6px; padding: 22px 22px 18px; border-bottom: 1px solid var(--line); }
+.logo b { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.logo b span { color: var(--accent); }
+.logo small { color: var(--faint); font-size: 12px; }
+.nav { padding: 14px 12px; display: flex; flex-direction: column; gap: 2px; }
+.nav h6 { margin: 14px 10px 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+.nav h6:first-child { margin-top: 4px; }
+.nav a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--muted); text-decoration: none; font-weight: 500; }
+.nav a:hover { background: var(--surface-2); color: var(--fg); }
+.nav a[aria-current="page"] { background: var(--accent-soft); color: var(--accent-ink); font-weight: 600; }
+.nav svg { width: 17px; height: 17px; flex: none; }
+.me { margin-top: auto; border-top: 1px solid var(--line); padding: 14px 18px; display: flex; align-items: center; gap: 10px; }
+.me .av { width: 34px; height: 34px; border-radius: 50%; background: var(--fg); color: var(--bg); display: grid; place-items: center; font-weight: 700; }
+.me p { margin: 0; font-weight: 600; font-size: 13px; }
+.me small { color: var(--faint); font-size: 12px; }
+
+main { padding-block: 28px 48px; padding-inline: 32px; min-width: 0; }
+.wrap { max-width: 1120px; }
+h1 { margin: 0 0 18px; font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
+.demo { font-size: 11px; font-weight: 600; color: var(--faint); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; vertical-align: middle; letter-spacing: 0; }
+
+.search { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.field { flex: 1 1 320px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; height: 52px; min-width: 0; }
+.field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.field svg { width: 18px; height: 18px; color: var(--faint); flex: none; }
+.field input { border: 0; outline: 0; background: transparent; flex: 1; min-width: 0; font-size: 15px; }
+.seg { display: flex; background: var(--surface-2); border-radius: 12px; padding: 4px; }
+.seg button { border: 0; background: transparent; padding: 9px 14px; border-radius: 9px; font-weight: 600; color: var(--muted); font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.go { height: 52px; padding: 0 22px; border-radius: 14px; border: 0; background: var(--accent); color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.go[disabled] { opacity: .7; cursor: progress; }
+.spin { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: s .7s linear infinite; }
+@keyframes s { to { transform: rotate(360deg); } }
+.samples { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 24px; align-items: center; }
+.samples span { color: var(--faint); font-size: 12px; margin-right: 2px; }
+.sample { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.sample:hover { border-color: var(--faint); color: var(--fg); }
+.sample[aria-pressed="true"] { border-color: var(--accent); color: var(--accent-ink); background: var(--accent-soft); font-weight: 600; }
+
+.card { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: 20px; min-width: 0; }
+.card h3 { margin: 0 0 14px; font-size: 14px; font-weight: 700; }
+.top { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+.bottom { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; }
+
+.who { display: flex; gap: 12px; align-items: center; }
+.ava { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; flex: none; }
+.who .nm { font-weight: 800; font-size: 16px; }
+.who .meta { color: var(--muted); font-size: 12.5px; }
+.score { display: grid; place-items: center; margin: 22px 0 14px; }
+.ring { --p: 0; --c: var(--good); width: 168px; height: 168px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--c) calc(var(--p) * 1%), var(--surface-2) 0); transition: --p .6s; }
+.ring > div { width: 140px; height: 140px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; align-content: center; }
+.ring b { font-size: 52px; font-weight: 800; letter-spacing: -2px; line-height: 1; }
+.ring small { color: var(--faint); font-size: 12px; font-weight: 600; margin-top: 4px; }
+.verdict { display: flex; justify-content: center; }
+.pill { font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 999px; display: inline-flex; gap: 6px; align-items: center; }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+
+.pillars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pillar { background: var(--surface-2); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; gap: 14px; }
+.pillar b { font-size: 40px !important; }
+.pillar .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pillar .lab { font-weight: 600; color: var(--muted); font-size: 13px; }
+.pillar b { font-size: 28px; font-weight: 800; letter-spacing: -.5px; }
+.pillar .t { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.pillar .t i { display: block; height: 100%; border-radius: 99px; transition: width .6s; }
+.pillar .note { color: var(--muted); font-size: 12px; }
+
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .gl { stroke: var(--line); }
+.chart .ax { fill: var(--faint); font-size: 11px; }
+.chart .ann { font-size: 11.5px; font-weight: 700; }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.chart-head .big { font-weight: 800; font-size: 20px; }
+.chart-head .delta { font-size: 12px; font-weight: 600; }
+
+.aud .bar { display: flex; height: 14px; border-radius: 99px; overflow: hidden; gap: 2px; margin-bottom: 12px; }
+.aud .bar i { display: block; height: 100%; }
+.aud .leg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; }
+.aud .leg div { font-size: 12px; color: var(--muted); }
+.aud .leg b { display: block; font-size: 18px; color: var(--fg); font-weight: 800; }
+.aud .leg i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.sig { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; }
+.sig li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+.sig .ic { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 800; flex: none; }
+.ic.ok { background: var(--good-soft); color: var(--good); }
+.ic.mid { background: var(--warn-soft); color: var(--warn); }
+.ic.no { background: var(--bad-soft); color: var(--bad); }
+
+.acts { display: flex; gap: 8px; margin-top: 16px; }
+.btn { flex: 1; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 14px; font-weight: 600; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.empty { border: 1px dashed var(--line); border-radius: var(--r-lg); padding: 40px 20px; text-align: center; color: var(--muted); }
+
+#result { transition: opacity .2s; }
+#result.loading { opacity: .35; }
+
+@media (max-width: 1100px) {
+  .top, .bottom { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 860px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .side { position: static; height: auto; flex-direction: row; border-right: 0; border-bottom: 1px solid var(--line); }
+  .side .nav, .side .me { display: none; }
+  .logo { border-bottom: 0; padding: 14px 16px; }
+  main { padding-inline: 16px; padding-block: 20px 40px; }
+}
+@media (max-width: 480px) {
+  .pillars { grid-template-columns: minmax(0, 1fr); }
+  .go { flex: 1; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="app">
+  <aside class="side">
+    <div class="logo"><b>Cari<span>KOL</span></b><small>by Buzzeryok</small></div>
+    <nav class="nav" aria-label="Navigasi utama">
+      <h6>Workspace</h6>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Dashboard</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1Z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M18 6a8 8 0 0 1 0 12"/></svg>Campaigns</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7"/><path d="M18 14a6.5 6.5 0 0 1 3.5 6"/></svg>Creator Workspace</a>
+      <h6>Kelola</h6>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16"/><path d="M15 9h4a1 1 0 0 1 1 1v11"/><path d="M8 8h3M8 12h3M8 16h3"/><path d="M2 21h20"/></svg>Brands</a>
+      <a href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>Cek Kredibilitas</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M5 21h14"/><path d="m5 8-3 7a3.5 3.5 0 0 0 6 0L5 8Zm14 0-3 7a3.5 3.5 0 0 0 6 0l-3-7Z"/><path d="M5 8h14"/></svg>Sanggahan</a>
+    </nav>
+    <div class="me"><div class="av">N</div><div><p>Nabnab Rahmadani</p><small>Campaign Manager</small></div></div>
+  </aside>
+
+  <main>
+    <div class="wrap">
+      <h1>Cek Kredibilitas <span class="demo">Data contoh</span></h1>
+
+      <form class="search" id="form">
+        <label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="text" placeholder="@username atau link profil" aria-label="Username atau link profil" autocomplete="off"></label>
+        <div class="seg" id="plat" role="group" aria-label="Platform"></div>
+        <button class="go" id="go" type="submit">Cek</button>
+      </form>
+      <div class="samples" id="samples"><span>Coba:</span></div>
+
+      <div id="result"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Data contoh untuk mockup — bukan hasil analisis akun asli.
+const MONTHS = ['Nov', 'Des', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt'];
+const PROFILES = {
+  karinalestari: {
+    name: 'Karina Lestari', handle: 'karinalestari', plat: 'TikTok', city: 'Yogyakarta', followers: '690 rb', posts: 412, score: 88,
+    pillars: { 'Kualitas engagement': [86, 'ER 4,1% · median 2,6%'], 'Keaslian audiens': [91, '89% akun asli'], 'Konsistensi konten': [84, '4× per minggu'], 'Pola pertumbuhan': [90, 'Stabil'] },
+    growth: [520, 534, 548, 560, 575, 590, 604, 620, 636, 651, 670, 690], spike: null,
+    audience: [89, 8, 3],
+    signals: [['ok', 'Tanpa lonjakan follower'], ['ok', 'Komentar beragam & relevan'], ['ok', 'Konten brand safe']],
+  },
+  mayakirana: {
+    name: 'Maya Kirana', handle: 'mayakirana', plat: 'TikTok', city: 'Semarang', followers: '1,6 jt', posts: 236, score: 68,
+    pillars: { 'Kualitas engagement': [74, 'ER 4,2% · median 3,0%'], 'Keaslian audiens': [66, '74% akun asli'], 'Konsistensi konten': [58, 'Vakum 2 bulan'], 'Pola pertumbuhan': [72, '1 lonjakan kecil'] },
+    growth: [1180, 1200, 1215, 1220, 1222, 1225, 1330, 1380, 1440, 1500, 1560, 1600], spike: { i: 6, label: '+105 rb' },
+    audience: [74, 18, 8],
+    signals: [['mid', 'Tidak posting Mar–Apr'], ['mid', '18% audiens pasif'], ['ok', 'Konten brand safe']],
+  },
+  'contoh.viral': {
+    name: 'Contoh Viral', handle: 'contoh.viral', plat: 'Instagram', city: 'Jakarta', followers: '1,2 jt', posts: 88, score: 34,
+    pillars: { 'Kualitas engagement': [28, 'ER 0,6% · median 2,1%'], 'Keaslian audiens': [31, '46% akun asli'], 'Konsistensi konten': [52, 'Tidak teratur'], 'Pola pertumbuhan': [22, 'Lonjakan ekstrem'] },
+    growth: [610, 618, 622, 630, 634, 640, 1050, 1080, 1120, 1150, 1180, 1200], spike: { i: 6, label: '+410 rb dalam 3 hari' },
+    audience: [46, 22, 32],
+    signals: [['no', '32% audiens terindikasi bot'], ['no', 'Komentar generik berulang'], ['mid', 'Like tinggi, komentar sangat sedikit']],
+  },
+};
+const PLATS = ['TikTok', 'Instagram', 'Threads'];
+const AVA = { karinalestari: ['#FFF0DB', '#92400E'], mayakirana: ['#E1F3EA', '#166534'], 'contoh.viral': ['#FCE4F1', '#9D174D'] };
+let plat = 'TikTok', current = null;
+
+const $ = (s) => document.querySelector(s);
+const verdict = (s) => s >= 80 ? ['good', 'Layak kolaborasi', 'var(--good)'] : s >= 55 ? ['warn', 'Perlu review', 'var(--warn)'] : ['bad', 'Berisiko', 'var(--bad)'];
+const tone = (v) => v >= 80 ? 'var(--good)' : v >= 55 ? 'var(--warn)' : 'var(--bad)';
+
+function renderPlat() {
+  $('#plat').innerHTML = PLATS.map(p => `<button type="button" aria-pressed="${p === plat}">${p}</button>`).join('');
+  $('#plat').querySelectorAll('button').forEach(b => b.onclick = () => { plat = b.textContent; renderPlat(); });
+}
+
+function renderSamples() {
+  $('#samples').innerHTML = '<span>Coba:</span>' + Object.keys(PROFILES).map(k =>
+    `<button type="button" class="sample" data-k="${k}" aria-pressed="${current === k}">@${k}</button>`).join('');
+  $('#samples').querySelectorAll('.sample').forEach(b => b.onclick = () => { $('#q').value = '@' + b.dataset.k; run(b.dataset.k); });
+}
+
+function chart(p) {
+  const W = 640, H = 230, L = 44, R = 14, T = 18, B = 30;
+  const max = Math.max(...p.growth), top = Math.ceil(max * 1.12 / 100) * 100, low = Math.floor(Math.min(...p.growth) * 0.85 / 100) * 100;
+  const x = (i) => L + i * (W - L - R) / (p.growth.length - 1);
+  const y = (v) => T + (1 - (v - low) / (top - low)) * (H - T - B);
+  const fmt = (v) => v >= 1000 ? (v / 1000).toFixed(1).replace('.', ',') + ' jt' : v + ' rb';
+  const ticks = [low, low + (top - low) / 2, top].map(v => Math.round(v));
+  let g = ticks.map(v => `<line class="gl" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`).join('');
+  g += MONTHS.map((m, i) => i % 2 === 0 || i === MONTHS.length - 1 ? `<text class="ax" x="${x(i)}" y="${H - 8}" text-anchor="middle">${m}</text>` : '').join('');
+  const pts = p.growth.map((v, i) => `${x(i)},${y(v)}`).join(' ');
+  const c = tone(p.pillars['Pola pertumbuhan'][0]);
+  g += `<polygon points="${x(0)},${H - B} ${pts} ${x(p.growth.length - 1)},${H - B}" fill="${c}" opacity=".08"/>`;
+  g += `<polyline points="${pts}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+  if (p.spike) {
+    const i = p.spike.i, sx = x(i), sy = y(p.growth[i]), px = x(i - 1), py = y(p.growth[i - 1]);
+    g += `<line x1="${px}" y1="${py}" x2="${sx}" y2="${sy}" stroke="${c}" stroke-width="5" opacity=".25" stroke-linecap="round"/>`;
+    g += `<circle cx="${sx}" cy="${sy}" r="5" fill="${c}" stroke="var(--surface)" stroke-width="2"/>`;
+    g += `<text class="ann" x="${sx - 10}" y="${sy - 12}" text-anchor="end" fill="${c}">${p.spike.label}</text>`;
+  }
+  const li = p.growth.length - 1;
+  g += `<circle cx="${x(li)}" cy="${y(p.growth[li])}" r="4.5" fill="${c}" stroke="var(--surface)" stroke-width="2"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Pertumbuhan follower 12 bulan">${g}</svg>`;
+}
+
+function render(k) {
+  const p = PROFILES[k];
+  if (!p) {
+    $('#result').innerHTML = `<div class="empty">Mockup ini hanya punya 3 akun contoh. Pilih salah satu di atas.</div>`;
+    return;
+  }
+  plat = p.plat; renderPlat();
+  const [vk, vl, vc] = verdict(p.score);
+  const [bg, ink] = AVA[k];
+  const first = p.growth[0], last = p.growth[p.growth.length - 1];
+  const pct = Math.round((last - first) / first * 100);
+  const pillars = Object.entries(p.pillars).map(([lab, [v, note]]) => `
+    <div class="pillar"><div class="row"><span class="lab">${lab}</span><b class="num" style="color:${tone(v)}">${v}</b></div>
+      <div class="t"><i style="width:${v}%;background:${tone(v)}"></i></div><span class="note">${note}</span></div>`).join('');
+  const [a, ps, sus] = p.audience;
+  const sig = p.signals.map(([t, s]) => `<li><span class="ic ${t}">${t === 'ok' ? '✓' : t === 'no' ? '✕' : '!'}</span>${s}</li>`).join('');
+  $('#result').innerHTML = `
+    <div class="top">
+      <section class="card">
+        <div class="who"><div class="ava" style="background:${bg};color:${ink}">${p.name.split(' ').map(w => w[0]).join('')}</div>
+          <div><div class="nm">${p.name}</div><div class="meta num">@${p.handle} · ${p.plat} · ${p.followers} followers</div></div></div>
+        <div class="score"><div class="ring" style="--p:${p.score};--c:${vc}"><div><b class="num" style="color:${vc}">${p.score}</b><small>Trust score</small></div></div></div>
+        <div class="verdict"><span class="pill ${vk}">${vl}</span></div>
+        <div class="acts"><button class="btn" type="button">Simpan</button><button class="btn primary" type="button">+ Shortlist</button></div>
+      </section>
+      <section class="pillars" aria-label="Komponen skor">${pillars}</section>
+    </div>
+    <div class="bottom">
+      <section class="card chart">
+        <div class="chart-head"><h3>Pertumbuhan follower</h3><span><span class="big num">${p.followers}</span> <span class="delta num" style="color:${tone(p.pillars['Pola pertumbuhan'][0])}">+${pct}% / 12 bln</span></span></div>
+        ${chart(p)}
+      </section>
+      <section class="card aud">
+        <h3>Kualitas audiens</h3>
+        <div class="bar" role="img" aria-label="Asli ${a}%, pasif ${ps}%, mencurigakan ${sus}%"><i style="width:${a}%;background:var(--good)"></i><i style="width:${ps}%;background:var(--faint)"></i><i style="width:${sus}%;background:var(--bad)"></i></div>
+        <div class="leg">
+          <div><b class="num">${a}%</b><i style="background:var(--good)"></i>Asli</div>
+          <div><b class="num">${ps}%</b><i style="background:var(--faint)"></i>Pasif</div>
+          <div><b class="num">${sus}%</b><i style="background:var(--bad)"></i>Mencurigakan</div>
+        </div>
+        <ul class="sig">${sig}</ul>
+      </section>
+    </div>`;
+}
+
+function run(k) {
+  current = k; renderSamples();
+  const go = $('#go'), res = $('#result');
+  go.disabled = true; go.innerHTML = '<span class="spin" aria-hidden="true"></span>Menganalisis';
+  res.classList.add('loading');
+  setTimeout(() => {
+    render(k); res.classList.remove('loading');
+    go.disabled = false; go.textContent = 'Cek';
+  }, 650);
+}
+
+$('#form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const v = $('#q').value.trim().replace(/^https?:\/\/[^/]+\//, '').replace(/^@/, '').replace(/\/.*$/, '').toLowerCase();
+  if (v) run(v);
+});
+
+renderPlat();
+current = 'karinalestari';
+$('#q').value = '@karinalestari';
+renderSamples();
+render('karinalestari');
+</script>
