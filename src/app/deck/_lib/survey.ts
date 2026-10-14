@@ -10,6 +10,8 @@ export type Problem    = { label: string; count: number }
 export type Persona    = {
   key:      PersonaKey
   label:    string
+  /** Lowercase noun for running text, as the deck writes it ("26 agensi"). */
+  noun:     string
   n:        number
   problems: Problem[]
   meaning:  string
@@ -19,6 +21,7 @@ export const PERSONAS: Persona[] = [
   {
     key:   "creator",
     label: "Creator",
+    noun:  "kreator",
     n:     99,
     problems: [
       { label: "Kirim portfolio berulang kali",     count: 35 },
@@ -30,6 +33,7 @@ export const PERSONAS: Persona[] = [
   {
     key:   "brand",
     label: "Brand / UMKM",
+    noun:  "brand/UMKM",
     n:     12,
     problems: [
       { label: "Proses screening manual",            count: 4 },
@@ -41,6 +45,7 @@ export const PERSONAS: Persona[] = [
   {
     key:   "agency",
     label: "Agency",
+    noun:  "agensi",
     n:     26,
     problems: [
       { label: "Sulit membandingkan creator",       count: 11 },

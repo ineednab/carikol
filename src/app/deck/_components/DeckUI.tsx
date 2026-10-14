@@ -1,71 +1,119 @@
 import type { ReactNode } from "react"
-import type { PersonaKey } from "../_lib/survey"
 
-// Shared visual primitives for the /deck slides (16:9, designed at 1456×816).
+// Shared visual system for the /deck slides, matching the pitch deck's
+// appendix slides: white 1920×1080 canvas, pink (#EE1D62) + navy (#14123A),
+// hairline-bordered cards (#F0E4E9) and pink-tinted number dots (#FDE8EF).
+//
+// From `lg` up the slide is a fixed 16:9 canvas scaled to fit the viewport:
+// --spacing is one design pixel (1/1920 of the slide width), so `px-64`,
+// `size-52` and `fs-24` are measured straight off the 1920px design. Below
+// `lg` the same markup reflows as a normal page at 0.7 scale.
 
-export const CARD = "rounded-[22px] border border-white/70 bg-white/90 shadow-[0_10px_40px_-12px_rgba(76,29,149,0.14)] backdrop-blur-sm"
+export const DECK_FOOTER = "CariKOL.id · DSC Season 17"
 
-export const PERSONA_THEME: Record<PersonaKey, { icon: ReactNode; chip: string; bar: string; track: string; num: string }> = {
-  creator: {
-    icon:  <PersonIcon />,
-    chip:  "bg-[#F1ECFE] text-[#7C3AED]",
-    bar:   "bg-gradient-to-r from-[#6D28D9] to-[#A855F7]",
-    track: "bg-[#EEE9FB]",
-    num:   "bg-[#F4F1FB] text-[#7C3AED]",
-  },
-  brand: {
-    icon:  <BuildingIcon />,
-    chip:  "bg-[#FDECF4] text-[#EC4899]",
-    bar:   "bg-gradient-to-r from-[#DB2777] to-[#F472B6]",
-    track: "bg-[#FCE7F1]",
-    num:   "bg-[#FDF0F6] text-[#DB2777]",
-  },
-  agency: {
-    icon:  <GroupIcon />,
-    chip:  "bg-[#F1ECFE] text-[#7C3AED]",
-    bar:   "bg-gradient-to-r from-[#6D28D9] to-[#A855F7]",
-    track: "bg-[#EEE9FB]",
-    num:   "bg-[#F4F1FB] text-[#7C3AED]",
-  },
-}
+export const CARD = "rounded-[calc(var(--spacing)*14)] border border-[#F0E4E9] bg-white"
 
-export function DeckShell({ children }: { children: ReactNode }) {
+export function Slide({
+  code,
+  label,
+  title,
+  subtitle,
+  page,
+  children,
+}: {
+  code:     string
+  label:    string
+  title:    ReactNode
+  subtitle: ReactNode
+  page:     string
+  children: ReactNode
+}) {
   return (
-    <div className="relative min-h-svh overflow-hidden bg-[#FBFAFF] text-[#14112B]">
-      {/* Soft background glows */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -right-40 -top-48 h-[620px] w-[620px] rounded-full bg-[#FBCFE8]/55 blur-[120px]" />
-        <div className="absolute -left-40 top-1/3 h-[520px] w-[520px] rounded-full bg-[#EDE9FE]/70 blur-[120px]" />
-        <div className="absolute -bottom-48 right-0 h-[480px] w-[480px] rounded-full bg-[#FCE7F3]/60 blur-[120px]" />
-      </div>
+    <div className="flex min-h-svh items-center justify-center bg-white text-[#14123A]">
+      <div className="w-full lg:w-[min(100vw,calc(100svh*16/9))] lg:[container-type:inline-size]">
+        <div className="flex flex-col px-24 pb-28 pt-40 [--spacing:0.7px] lg:aspect-video lg:overflow-hidden lg:px-64 lg:pb-20 lg:pt-49 lg:[--spacing:calc(100cqw/1920)]">
+          <header>
+            <p className="fs-18 font-bold uppercase leading-[1.2] tracking-[0.25em] text-[#EE1D62]">
+              {code} · {label}
+            </p>
+            <h1 className="mt-16 fs-52 font-extrabold leading-[1.02] tracking-[-0.05em] lg:mt-11 lg:fs-68">{title}</h1>
+            <p className="mt-10 fs-24 leading-[1.35] text-[#7B7B8C] lg:mt-9 lg:fs-26">{subtitle}</p>
+          </header>
 
-      <main className="relative mx-auto flex max-w-[1456px] flex-col gap-5 xl:gap-4 px-4 py-8 sm:px-8 sm:py-10 xl:px-[46px] xl:pb-5 xl:pt-8">
-        {children}
-      </main>
+          <div className="mt-28 flex flex-1 flex-col lg:mt-29">{children}</div>
+
+          <footer className="mt-28 flex items-baseline justify-between fs-18 font-medium text-[#7B7B8C] lg:mt-16">
+            <span>{DECK_FOOTER}</span>
+            <span>{page}</span>
+          </footer>
+        </div>
+      </div>
     </div>
   )
 }
 
-export function Eyebrow({ code, children }: { code: string; children: ReactNode }) {
+/** The pink lead words of a slide title. */
+export function Accent({ children }: { children: ReactNode }) {
+  return <span className="text-[#EE1D62]">{children}</span>
+}
+
+export function NumberDot({ n, size = "lg" }: { n: number; size?: "sm" | "lg" }) {
   return (
-    <p className="text-[13px] font-bold uppercase leading-none tracking-[0.2em] text-[#7C3AED]">
-      {code} <span className="mx-1.5">•</span> {children}
-    </p>
+    <span
+      className={`flex shrink-0 items-center justify-center rounded-full bg-[#FDE8EF] font-bold text-[#EE1D62] ${
+        size === "lg" ? "size-53 fs-24" : "size-26 fs-14"
+      }`}
+    >
+      {n}
+    </span>
   )
 }
 
-const BADGE_SIZE = {
-  sm: { box: "h-8 w-8",   icon: "h-4 w-4" },
-  md: { box: "h-10 w-10", icon: "h-5 w-5" },
-  lg: { box: "h-11 w-11", icon: "h-5 w-5" },
+/** Appendix card: number dot on the left, title and body to its right. */
+export function NumberedCard({
+  n,
+  title,
+  meta,
+  children,
+  className = "",
+}: {
+  n:          number
+  title:      ReactNode
+  meta?:      ReactNode
+  children:   ReactNode
+  className?: string
+}) {
+  return (
+    <article className={`${CARD} flex gap-19 px-23 pb-24 pt-19 ${className}`}>
+      <NumberDot n={n} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex items-start justify-between gap-12">
+          <h2 className="pt-1 fs-28 font-bold leading-[1.2] tracking-[-0.02em]">{title}</h2>
+          {meta}
+        </div>
+        <div className="mt-3 flex flex-1 flex-col fs-23 leading-[1.41] text-[#4A4A5E] [&_b]:font-bold [&_b]:text-[#14123A]">
+          {children}
+        </div>
+      </div>
+    </article>
+  )
 }
 
-/** Persona icon in a tinted circle. */
-export function PersonaBadge({ persona, size = "lg" }: { persona: PersonaKey; size?: keyof typeof BADGE_SIZE }) {
-  const { box, icon } = BADGE_SIZE[size]
+// ─── Persona icons ───────────────────────────────────────────────────────────
+
+const PERSONA_ICON = {
+  creator: <PersonIcon />,
+  brand:   <BuildingIcon />,
+  agency:  <GroupIcon />,
+}
+
+/** Persona icon in a pink-tinted circle. */
+export function PersonaBadge({ persona, size = 52 }: { persona: keyof typeof PERSONA_ICON; size?: 40 | 52 | 64 }) {
+  const box  = { 40: "size-40", 52: "size-52", 64: "size-64" }[size]
+  const icon = { 40: "size-20", 52: "size-24", 64: "size-30" }[size]
   return (
-    <span className={`flex ${box} shrink-0 items-center justify-center rounded-full ${PERSONA_THEME[persona].chip}`}>
-      <span className={icon}>{PERSONA_THEME[persona].icon}</span>
+    <span className={`flex ${box} shrink-0 items-center justify-center rounded-full bg-[#FDE8EF] text-[#EE1D62]`}>
+      <span className={icon}>{PERSONA_ICON[persona]}</span>
     </span>
   )
 }

@@ -1,17 +1,16 @@
 import type { Metadata } from "next"
 import Image, { type StaticImageData } from "next/image"
 import Link from "next/link"
-import { Check, Info, Maximize2 } from "lucide-react"
-import { CARD, DeckShell, Eyebrow, PersonaBadge } from "../_components/DeckUI"
+import { Accent, NumberedCard, Slide } from "../_components/DeckUI"
 import { SURVEY_PERIOD, TOTAL, pct, persona, problemOf, type PersonaKey } from "../_lib/survey"
 import landingShot   from "./_assets/landing.webp"
 import cekShot       from "./_assets/cek-kredibilitas.webp"
 import workspaceShot from "./_assets/creator-workspace.webp"
 
 export const metadata: Metadata = {
-  title: "Product Evidence — CariKOL.id",
+  title: "Lampiran 01 · Product Evidence — CariKOL.id",
   description:
-    "Lampiran 01: tiga layar CariKOL.id yang menjawab masalah utama creator, brand, dan agency dari survei waitlist.",
+    "Tiga layar CariKOL.id yang menjawab masalah utama kreator, brand, dan agensi dari survei waitlist.",
   robots: { index: false, follow: false },
 }
 
@@ -24,8 +23,7 @@ const SCREENS: {
   shot:    StaticImageData
   alt:     string
   desc:    string
-  points:  string[]
-  answers: string[]
+  answers: [string, string]
 }[] = [
   {
     persona: "creator",
@@ -33,12 +31,7 @@ const SCREENS: {
     status:  "live",
     shot:    landingShot,
     alt:     "Landing page CariKOL.id: file media kit dan rate card PDF diganti satu profil creator dengan riwayat campaign",
-    desc:    "Media kit, rate card, dan portfolio yang biasa dikirim berulang diganti satu link profil yang terupdate otomatis.",
-    points: [
-      "Dari file PDF manual ke satu link profil",
-      "Statistik campaign, avg reach, dan brand returning",
-      "Riwayat campaign terverifikasi",
-    ],
+    desc:    "Media kit, rate card, dan portfolio PDF diganti satu link profil berisi statistik dan riwayat campaign terverifikasi yang terupdate otomatis.",
     answers: ["Kirim portfolio berulang kali", "Update informasi di banyak tempat"],
   },
   {
@@ -47,12 +40,7 @@ const SCREENS: {
     status:  "sample",
     shot:    cekShot,
     alt:     "Halaman Cek Kredibilitas: trust score creator, empat skor sinyal, grafik pertumbuhan follower, dan kualitas audiens",
-    desc:    "Cukup masukkan username untuk melihat trust score creator sebelum mengajak kerja sama.",
-    points: [
-      "Trust score dari 4 sinyal kredibilitas",
-      "Menandai lonjakan follower dan audiens mencurigakan",
-      "TikTok, Instagram, dan Threads",
-    ],
+    desc:    "Masukkan username TikTok, Instagram, atau Threads untuk melihat trust score dari 4 sinyal, lonjakan follower tidak wajar, dan komposisi audiens.",
     answers: ["Proses screening manual", "Khawatir dengan engagement palsu"],
   },
   {
@@ -61,154 +49,86 @@ const SCREENS: {
     status:  "sample",
     shot:    workspaceShot,
     alt:     "Creator Workspace: filter positioning brand, daftar creator dengan skor kecocokan, dan peta positioning",
-    desc:    "Atur positioning brand sekali, lalu semua creator diurutkan berdasarkan skor kecocokan.",
-    points: [
-      "Filter karakter, kategori, audiens, platform, dan budget",
-      "Skor kecocokan per creator beserta alasannya",
-      "Peta positioning dan shortlist dalam satu layar",
-    ],
+    desc:    "Atur positioning brand sekali (karakter, kategori, audiens, platform, budget), lalu creator diurutkan berdasarkan skor kecocokan beserta alasannya.",
     answers: ["Sulit membandingkan creator", "Rate tidak jelas"],
   },
 ]
 
-// ─── Page ────────────────────────────────────────────────────────────────────
-
 export default function ProductEvidencePage() {
   return (
-    <DeckShell>
-      <header className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_540px] xl:items-end xl:gap-10">
-        <div>
-          <Eyebrow code="Lampiran 01">Product Evidence</Eyebrow>
-          <h1 className="mt-3 text-[36px] font-extrabold leading-[1.04] tracking-[-0.035em] sm:text-[44px] xl:text-[46px]">
-            Tiga masalah utama,{" "}
-            <br className="hidden xl:block" />
-            <span className="bg-gradient-to-r from-[#6D28D9] via-[#9333EA] to-[#DB2777] bg-clip-text text-transparent">
-              tiga layar yang menjawabnya.
-            </span>
-          </h1>
-        </div>
-        <p className="text-[16px] leading-[1.5] text-[#6B6880] xl:pb-1.5">
-          Setiap layar dirancang dari masalah teratas tiap tipe responden di survei waitlist (n = {TOTAL}):
-          creator berhenti mengirim ulang media kit, brand bisa menyaring creator berisiko, dan agency bisa
-          membandingkan creator di satu tempat.
-        </p>
-      </header>
-
-      <div className="grid gap-5 lg:grid-cols-3">
+    <Slide
+      code="Lampiran 01"
+      label="Product Evidence"
+      title={<><Accent>Bukti produk</Accent> dan masalah yang dijawab.</>}
+      subtitle="Tiga layar CariKOL.id, masing-masing dipetakan ke masalah teratas satu tipe responden survei waitlist."
+      page="Lampiran 01"
+    >
+      <div className="grid gap-16 lg:grid-cols-3">
         {SCREENS.map((screen, i) => (
-          <ScreenCard key={screen.persona} index={i + 1} {...screen} />
+          <ScreenCard key={screen.persona} n={i + 1} {...screen} />
         ))}
       </div>
 
-      <SourceNote />
-    </DeckShell>
+      <p className="mt-16 fs-20 leading-[1.4] text-[#7B7B8C]">
+        Layar 02 dan 03 memakai data contoh, bukan data creator nyata. Angka masalah: survei waitlist CariKOL.id,{" "}
+        {SURVEY_PERIOD} (n = {TOTAL}), lihat{" "}
+        <Link href="/deck/market-validation" className="font-semibold text-[#EE1D62] underline-offset-4 hover:underline">
+          A2 · Market Validation
+        </Link>
+        .
+      </p>
+    </Slide>
   )
 }
 
-// ─── Sections ────────────────────────────────────────────────────────────────
+function ScreenCard({ n, persona: key, title, status, shot, alt, desc, answers }: (typeof SCREENS)[number] & { n: number }) {
+  const { noun, n: respondents } = persona(key)
+  const [first, second] = answers.map((label) => ({ label, count: problemOf(key, label).count }))
 
-function ScreenCard({ index, persona: key, title, status, shot, alt, desc, points, answers }: (typeof SCREENS)[number] & { index: number }) {
-  const { label, n } = persona(key)
   return (
-    <article className={`${CARD} flex flex-col px-5 pb-4 pt-4`}>
-      <div className="flex items-center gap-2.5">
-        <span className="text-[13px] font-extrabold tracking-[0.06em] text-[#7C3AED]">
-          {String(index).padStart(2, "0")}
-        </span>
-        <span className="h-4 w-px bg-[#E4DFF0]" />
-        <PersonaBadge persona={key} size="sm" />
-        <span className="text-[13px] font-semibold text-[#3B3852]">Untuk {label}</span>
-        <StatusPill status={status} />
-      </div>
-
-      <h2 className="mt-3 text-[20px] font-bold leading-tight tracking-[-0.015em]">{title}</h2>
-      <p className="mt-1 text-[13px] leading-[1.45] text-[#6B6880]">{desc}</p>
+    <NumberedCard n={n} title={title} meta={<StatusPill status={status} />}>
+      <p>{desc}</p>
 
       <a
         href={shot.src}
         target="_blank"
         rel="noopener noreferrer"
-        className="group relative mt-3 block overflow-hidden rounded-xl border border-[#E9E5F3] bg-white shadow-[0_6px_20px_-10px_rgba(76,29,149,0.25)]"
         aria-label={`Buka screenshot ${title} ukuran penuh`}
+        className="group relative mt-18 block overflow-hidden rounded-[calc(var(--spacing)*8)] border border-[#F0E4E9]"
       >
-        <div className="flex h-[22px] items-center gap-1.5 border-b border-[#EEEAF6] bg-[#F8F7FC] px-2.5">
-          <span className="h-[7px] w-[7px] rounded-full bg-[#F2B8C6]" />
-          <span className="h-[7px] w-[7px] rounded-full bg-[#F6DA9C]" />
-          <span className="h-[7px] w-[7px] rounded-full bg-[#BFE3C8]" />
-        </div>
         <Image
           src={shot}
           alt={alt}
           placeholder="blur"
-          sizes="(min-width: 1456px) 440px, (min-width: 1024px) 31vw, 100vw"
+          sizes="(min-width: 1024px) 25vw, 100vw"
           className="aspect-video h-auto w-full object-cover object-top"
         />
-        <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-[#14112B]/80 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
-          <Maximize2 size={11} /> Ukuran penuh
+        <span className="pointer-events-none absolute bottom-10 right-10 rounded-full bg-[#14123A]/85 px-12 py-4 fs-15 font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+          Ukuran penuh ↗
         </span>
       </a>
 
-      <ul className="mt-3 flex flex-col gap-1.5">
-        {points.map((point) => (
-          <li key={point} className="flex items-start gap-2 text-[13px] leading-snug text-[#3B3852]">
-            <Check size={14} strokeWidth={2.5} className="mt-[2px] shrink-0 text-[#7C3AED]" />
-            {point}
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-auto pt-3">
-        <div className="rounded-xl bg-[#F7F4FE] px-3.5 py-2.5">
-          <p className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-[#7C3AED]">
-            Menjawab masalah {label} <span className="font-semibold text-[#9C94B8]">· n = {n}</span>
-          </p>
-          <ul className="mt-1.5 flex flex-col gap-1">
-            {answers.map((answer) => {
-              const { count } = problemOf(key, answer)
-              return (
-                <li key={answer} className="flex items-baseline justify-between gap-3 text-[12.5px]">
-                  <span className="text-[#3B3852]">{answer}</span>
-                  <span className="whitespace-nowrap">
-                    <strong className="font-bold">{count}</strong>{" "}
-                    <span className="text-[11px] text-[#6B6880]">({pct(count, n)})</span>
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      </div>
-    </article>
+      <p className="mt-18">
+        Menjawab 2 masalah teratas dari {respondents} {noun}: {lowerFirst(first.label)}{" "}
+        <b>{first.count} ({pct(first.count, respondents)})</b> dan {lowerFirst(second.label)}{" "}
+        <b>{second.count} ({pct(second.count, respondents)})</b>.
+      </p>
+    </NumberedCard>
   )
 }
 
 function StatusPill({ status }: { status: "live" | "sample" }) {
   return status === "live" ? (
-    <span className="ml-auto flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#E9F8EF] px-2.5 py-1 text-[11px] font-semibold text-[#15803D]">
-      <span className="h-1.5 w-1.5 rounded-full bg-[#22C55E]" /> Live
+    <span className="mt-4 flex shrink-0 items-center gap-8 rounded-full bg-[#FDE8EF] px-14 py-5 fs-16 font-semibold text-[#EE1D62]">
+      <span className="size-8 rounded-full bg-[#EE1D62]" /> Live
     </span>
   ) : (
-    <span className="ml-auto whitespace-nowrap rounded-full border border-[#E4DFF0] bg-white px-2.5 py-1 text-[11px] font-medium text-[#6B6880]">
+    <span className="mt-4 shrink-0 rounded-full border border-[#F0E4E9] px-14 py-5 fs-16 font-medium text-[#7B7B8C]">
       Data contoh
     </span>
   )
 }
 
-function SourceNote() {
-  return (
-    <p className="flex items-start gap-3 rounded-xl bg-white/60 px-4 py-1.5 text-[12.5px] leading-relaxed text-[#3B3852] sm:items-center">
-      <Info size={20} strokeWidth={1.8} className="shrink-0 text-[#7C3AED]" />
-      <span>
-        <strong className="font-bold">Sumber:</strong> Screenshot produk CariKOL.id. Layar 02 dan 03 memakai data
-        contoh, bukan data creator sungguhan.{" "}
-        <span className="text-[#7C3AED]">
-          Angka masalah dari survei waitlist {SURVEY_PERIOD} (n = {TOTAL}), lihat{" "}
-          <Link href="/deck/market-validation" className="font-semibold underline underline-offset-2">
-            A2 · Market Validation
-          </Link>
-          .
-        </span>
-      </span>
-    </p>
-  )
+function lowerFirst(text: string): string {
+  return text.charAt(0).toLowerCase() + text.slice(1)
 }
